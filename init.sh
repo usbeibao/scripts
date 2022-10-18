@@ -99,7 +99,7 @@ ssh_key_install() {
   sed -i '/sudo/s/ALL$/NOPASSWD: ALL/' /etc/sudoers
   mkdir /home/$2/.ssh
   touch /home/$2/.ssh/authorized_keys
-  curl https://github.com/$2.keys > /home/frank.chen/.ssh/authorized_keys
+  curl https://github.com/$3.keys > /home/$2/.ssh/authorized_keys
   chmod 400 /home/$2/.ssh/authorized_keys
   chmod 700 /home/$2/.ssh/
   chown $2:$2 /home/$2/.ssh -R
