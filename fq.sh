@@ -118,8 +118,8 @@ getInput() {
 }
 
 getCert() {
-  certbot certonly --nginx -d $TROJAN_DOMAIN
-  certbot certonly --nginx -d $GRPC_DOMAIN
+  certbot certonly --nginx --register-unsafely-without-email -d $TROJAN_DOMAIN
+  certbot certonly --nginx --register-unsafely-without-email -d $GRPC_DOMAIN
 }
 
 configNginx() {
