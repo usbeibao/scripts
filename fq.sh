@@ -469,7 +469,7 @@ configXray() {
       "settings": {
         "clients": [
           {
-            "id": "b3fcb1e5-29fb-47c5-87f8-abd9a994d53f",
+            "id": "$VMESS_PASSWORD",
             "level": 1,
             "alterId": 0
           }
