@@ -144,7 +144,7 @@ besttrace_install() {
 checkRoot
 apt_source
 fail2ban_install
-ssh_key_install
+ssh_key_install $1 $2
 cloudflare_doh_install
 besttrace_install
 worsttrace_install
