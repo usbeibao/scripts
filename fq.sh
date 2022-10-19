@@ -479,7 +479,10 @@ configXray() {
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "$WSPATH"
+          "path": "$WSPATH",
+          "headers": {
+              "Host": "${GRPC_DOMAIN}" 
+          }
         }
       }
     },
