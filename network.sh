@@ -147,6 +147,7 @@ optimizing_system() {
   sed -i '/net.ipv4.udp_wmem_min/d' /etc/sysctl.conf
   sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
   sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+  
 
   echo "net.ipv4.tcp_retries2 = 8
 net.ipv4.tcp_slow_start_after_idle = 0
@@ -184,7 +185,12 @@ net.core.wmem_max=33554432
 net.ipv4.udp_rmem_min=8192
 net.ipv4.udp_wmem_min=8192
 net.core.default_qdisc=fq
-net.ipv4.tcp_congestion_control=bbr" >>/etc/sysctl.conf
+net.ipv4.tcp_congestion_control=bbr
+# disable ipv6
+net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+net.ipv6.conf.eth0.disable_ipv6=1
+net.ipv6.conf.lo.disable_ipv6=1" >>/etc/sysctl.conf
 
   echo "* soft nofile 1048576 
 * hard nofile 1048576 
