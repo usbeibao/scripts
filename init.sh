@@ -90,6 +90,7 @@ EOF
 
 
   fail2ban-client restart
+  systemctl enable --now nftables
   coloredEcho $GREEN " Fail2Ban 安装完成"
 }
 
