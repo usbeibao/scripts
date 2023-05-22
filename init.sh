@@ -128,13 +128,6 @@ cloudflare_doh_install() {
   coloredEcho $GREEN " Cloudflare-DOH 安装完成"
 }
 
-worsttrace_install() {
-  [[ ! -f /usr/local/bin/worsttrace ]] && wget https://pkg.wtrace.app/linux/worsttrace -O /usr/local/bin/worsttrace
-  [[ ! -f /usr/local/bin/worsttrace ]] && echo -e "${Error} download failed, please check!" && exit 1
-  chmod +x /usr/local/bin/worsttrace
-  coloredEcho $GREEN " WorstTrace 安装完成"
-}
-
 besttrace_install() {
   [[ ! -f /usr/local/bin/besttrace ]] && wget https://github.com/zhucaidan/BestTrace-Linux/raw/master/besttrace -O /usr/local/bin/besttrace
   [[ ! -f /usr/local/bin/besttrace ]] && echo -e "${Error} download failed, please check!" && exit 1
@@ -148,7 +141,6 @@ fail2ban_install
 ssh_key_install $1 $2
 cloudflare_doh_install
 besttrace_install
-worsttrace_install
 
 read -p "系统初始化完成，建议重启后安装BBR，是否现在重启 ? [Y/n] :" yn
 [ -z "${yn}" ] && yn="y"
