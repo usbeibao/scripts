@@ -466,7 +466,7 @@ configXray() {
           ],
           "privateKey": "${realityPrivateKey}",
           "publicKey": "${realityPublicKey}",
-          "maxTimeDiff": 70000,
+          "maxTimeDiff": 0,
           "shortIds": [
             ""
           ]
