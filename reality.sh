@@ -87,17 +87,17 @@ getInput() {
   echo ""
   read -p " 请输入vmess伪装域名：" VMESS_DOMAIN
   DOMAIN=${VMESS_DOMAIN,,}
-  coloredEcho ${BLUE}  " trojan伪装域名(host)：$VMESS_DOMAIN"
+  coloredEcho ${BLUE}  " vmess伪装域名(host)：$VMESS_DOMAIN"
 
   echo ""
-  read -p " 请设置连接密码，回车随机生成:" PASSWORD
+  read -p " 请设置SS连接密码，回车随机生成:" PASSWORD
   [[ -z "$PASSWORD" ]] && PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
-  coloredEcho $BLUE " 密码：$PASSWORD"
+  coloredEcho $BLUE " SS密码：$PASSWORD"
   
   echo ""
   read -p " 请设置VMESS密码，回车随机生成:" VMESS_PASSWORD
   [[ -z "$VMESS_PASSWORD" ]] && VMESS_PASSWORD=`/usr/local/bin/xray uuid`
-  coloredEcho $BLUE " 密码：$VMESS_PASSWORD"
+  coloredEcho $BLUE " VMESS密码：$VMESS_PASSWORD"
   
   echo ""
   read -p " 请输入伪装路径，以/开头(不懂请直接回车)：" WSPATH
@@ -449,7 +449,7 @@ configXray() {
         "decryption": "none",
         "fallbacks": [
           {
-            "dest": "31305",
+            "dest": "38326",
             "xver": 1
           }
         ]
@@ -481,7 +481,7 @@ configXray() {
       }
     },
     {
-      "port": 31305,
+      "port": 38326,
       "listen": "127.0.0.1",
       "protocol": "vless",
       "tag": "VLESSRealityGRPC",
