@@ -242,7 +242,7 @@ http {
 }
 stream {
     map \$ssl_preread_server_name \$sni {
-        ${VMESS_DOMAIN}  trojan;
+        ${VMESS_DOMAIN}  vmess;
     }
     upstream vmess {
         server 127.0.0.1:21093;
