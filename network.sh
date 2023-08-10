@@ -164,7 +164,7 @@ net.ipv4.tcp_syn_retries = 1
 net.ipv4.tcp_synack_retries = 1
 net.core.somaxconn = 32768
 net.core.netdev_max_backlog = 32768
-net.ipv4.tcp_timestamps = 0
+net.ipv4.tcp_timestamps = 1
 net.ipv4.tcp_max_orphans = 32768
 # forward ipv4
 #net.ipv4.ip_forward = 1
