@@ -203,7 +203,7 @@ configNginx() {
   else
     user="nginx"
   fi
-  cat > /etc/nginx/nginx.conf<<-EOF
+  cat > /etc/nginx/nginx.conf<< EOF
 user $user;
 worker_processes auto;
 error_log /var/log/nginx/error.log;
@@ -273,7 +273,7 @@ EOF
     sub_filter \"$REMOTE_HOST\" \"$VMESS_DOMAIN\";
     sub_filter_once off;"
   fi
-  cat > ${NGINX_CONF_PATH}${VMESS_DOMAIN}.conf<<-EOF
+  cat > ${NGINX_CONF_PATH}${VMESS_DOMAIN}.conf<< EOF
 server {
     listen 80;
     listen [::]:80;
@@ -347,7 +347,7 @@ server {
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 }
 EOF
-cat > ${NGINX_SERVICE_FILE}<<-EOF
+cat > ${NGINX_SERVICE_FILE}<< EOF
 # Stop dance for nginx
 # =======================
 #
@@ -405,7 +405,7 @@ installXray() {
         exit 1
     }
 
-    cat >/etc/systemd/system/xray.service<<-EOF
+    cat >/etc/systemd/system/xray.service<< EOF
 [Unit]
 Description=Xray Service
 After=network.target nss-lookup.target
@@ -429,7 +429,7 @@ EOF
 
 configXray() {
     mkdir -p /usr/local/xray
-   cat > $XRAY_CONFIG_FILE<<-EOF
+   cat > $XRAY_CONFIG_FILE<< EOF
 {
   "log": {
     "loglevel": "none"
