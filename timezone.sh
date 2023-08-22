@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# 判断用户是不是root
+if ! [ $(id -u) = 0 ]; then
+    echo "请用root用户执行脚本" 1>&2
+    exit 1
+fi
+
 # 选择大洲
 echo "请选择时区所在的大陆或洲:" 
 select continent in "Africa" "America" "Asia" "Atlantic" "Australia" "Europe" "Indian" "Pacific"
@@ -27,6 +33,9 @@ timezone="/usr/share/zoneinfo/$continent/$zone"
 
 # 设置时区
 ln -sf $timezone /etc/localtime
+
+# 修改为24小时制
+update-locale LC_TIME=C.UTF-8
 
 # 安装chrony
 apt update 
