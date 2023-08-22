@@ -55,3 +55,16 @@ systemctl enable chrony
 # 查看时区和时间同步状态
 timedatectl status
 chronyc tracking
+
+# 重启服务器
+echo "重启后时间才会显示为24小时制,现在重启吗?(Y/N)"
+read -p "请选择:" choice
+
+if [ "$choice" == "Y" ] || [ "$choice" == "y" ]; then
+  echo "系统将在10秒后重启..."
+  sleep 10
+  reboot now
+else
+  echo "不重启, exiting..."
+  exit 0
+fi
