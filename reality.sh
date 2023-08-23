@@ -587,6 +587,7 @@ configXray() {
     }
   ],
   "routing": {
+    "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
         "type": "field",
@@ -621,6 +622,9 @@ configXray() {
         "outboundTag": "direct",
         "domain": [
           "geosite:netflix",
+          "geosite:hulu",
+          "geosite:disney",
+          "geosite:hbo",
           "amazonaws.com"
         ]
       },
