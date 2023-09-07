@@ -609,6 +609,27 @@ configXray() {
       },
       {
         "type": "field",
+        "domain": [
+          "steamcommunity.com",
+          "steampowered.com",
+          "steamserver.net",
+          "valve.net",
+          "battle.net",
+          "blizzard.com",
+          "epicgames.com",
+          "unrealengine.com",
+          "origin.com",
+          "ea.com",
+          "riotgames.com",
+          "leagueoflegends.com",
+          "playstation.com",
+          "ea.com",
+          "playstation.net"
+        ],
+        "outboundTag": "blackhole"
+      },
+      {
+        "type": "field",
         "outboundTag": "direct",
         "domain": [
           "google.com",
