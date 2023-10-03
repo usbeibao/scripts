@@ -387,8 +387,10 @@ EOF
 
 installXray() {
     rm -rf /tmp/xray
-    mkdir -p /tmp/xray
+    mkdir -p /tmp/xray/geo
     DOWNLOAD_LINK="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VER}/Xray-linux-$(archAffix).zip"
+    GEOIP_LINK="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+    GEOSITE_LINK="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
     coloredEcho $BLUE " 下载Xray: ${DOWNLOAD_LINK}"
     curl -L -H "Cache-Control: no-cache" -o /tmp/xray/xray.zip ${DOWNLOAD_LINK}
     if [ $? != 0 ];then
@@ -399,7 +401,11 @@ installXray() {
     mkdir -p /usr/local/etc/xray /usr/local/share/xray && \
     unzip /tmp/xray/xray.zip -d /tmp/xray
     cp /tmp/xray/xray /usr/local/bin
-    cp /tmp/xray/geo* /usr/local/share/xray
+    wget -P /usr/local/share/xray ${GEOIP_LINK} ${GEOSITE_LINK}
+    if [ $? != 0 ];then
+        coloredEcho $RED " 下载增强版geo文件失败，使用Xray默认geo文件"
+        cp /tmp/xray/geo* /usr/local/share/xray
+    fi    
     chmod +x /usr/local/bin/xray || {
         coloredEcho $RED " Xray安装失败"
         exit 1
