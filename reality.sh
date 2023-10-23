@@ -96,7 +96,7 @@ getInput() {
   
   echo ""
   read -p " 请设置VMESS密码，回车随机生成:" VMESS_PASSWORD
-  [[ -z "$VMESS_PASSWORD" ]] && VMESS_PASSWORD=`/usr/local/bin/xray uuid`
+  [[ -z "$VMESS_PASSWORD" ]] && VMESS_PASSWORD=`cat /proc/sys/kernel/random/uuid`
   coloredEcho $BLUE " VMESS密码：$VMESS_PASSWORD"
   
   echo ""
