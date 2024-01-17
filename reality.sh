@@ -673,7 +673,7 @@ EOF
 install() {
   apt clean all
   apt update -y
-  apt install wget vim unzip tar gcc openssl net-tools libssl-dev g++ -y
+  apt install sudo wget vim unzip tar net-tools dnsutils mtr mlocate xz-utils openssl libssl-dev gcc g++ -y
 
   echo ""
   coloredEcho $BLUE " 安装nginx..."
