@@ -84,7 +84,7 @@ archAffix(){
 }
 
 checkSystem() {
-    if [[ -f "/etc/issue" ]] && grep </etc/issue -q -i "debian"  [[ -f "/proc/version" ]] && grep </etc/issue -q -i "debian"  [[ -f "/etc/os-release" ]] && grep </etc/os-release -q -i "ID=debian"; then
+    if [[ -f "/etc/issue" ]] && grep </etc/issue -q -i "debian" || [[ -f "/proc/version" ]] && grep </etc/issue -q -i "debian" || [[ -f "/etc/os-release" ]] && grep </etc/os-release -q -i "ID=debian"; then
         release="debian"
         installType='apt -y install'
         upgrade="apt update"
@@ -116,7 +116,7 @@ getInput() {
   DOMAIN=${VMESS_DOMAIN,,}
   coloredEcho ${BLUE}  " vmess伪装域名(host)：$VMESS_DOMAIN"
 
-  echo ""
+  echo ""checkSystem
   read -p " 请设置SS连接密码，回车随机生成:" PASSWORD
   [[ -z "$PASSWORD" ]] && PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
   coloredEcho $BLUE " SS密码：$PASSWORD"
@@ -258,10 +258,6 @@ worker_processes auto;
 error_log /var/log/nginx/error.log;
 pid /run/nginx.pid;
 
-# Load dynamic modules. See /usr/share/doc/nginx/README.dynamic.
-load_module /usr/lib/nginx/modules/ngx_stream_module.so;
-include /usr/share/nginx/modules/*.conf;
-
 events {
     worker_connections 65535;
 }
@@ -364,8 +360,9 @@ server {
 }
 
 server {
-    listen 21093 ssl http2;
-    listen [::]:21093 ssl http2;
+    listen 21093 ssl;
+    listen [::]:21093 ssl;
+    http2 on;
     server_name ${VMESS_DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${VMESS_DOMAIN}/fullchain.pem;
@@ -446,7 +443,6 @@ installXray() {
         coloredEcho $RED " 下载Xray文件失败，请检查服务器网络设置"
         exit 1
     fi
-    systemctl stop xray
     mkdir -p /usr/local/etc/xray /usr/local/share/xray && \
     unzip /tmp/xray/xray.zip -d /tmp/xray
     cp /tmp/xray/xray /usr/local/bin
@@ -746,5 +742,6 @@ install() {
 }
 
 checkRoot
+checkSystem
 getInput
 install
