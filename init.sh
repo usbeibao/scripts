@@ -1,6 +1,4 @@
 #!/bin/bash
-# Init script. Initialize for debian bullseye with proper apt source and prepare the tools
-# Author: ratneo<https://ihost.wiki>
 
 RED="\033[31m"      # Error message
 GREEN="\033[32m"    # Success message
@@ -135,12 +133,40 @@ besttrace_install() {
   coloredEcho $GREEN " BestTrace 安装完成"
 }
 
+dnscrypt_proxy_install() {
+  apt install dnscrypt-proxy
+  sudo sed -i "s/server_names = \['cloudflare'\]/server_names = \['cloudflare', 'google'\]/" /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+  echo "nameserver 127.0.2.1" | sudo tee /etc/resolv.conf
+  chattr +i /etc/resolv.conf
+  systemctl restart dnscrypt-proxy
+  coloredEcho $GREEN " dnscrypt-proxy 安装完成"
+}
+
+smartdns_install() {
+  wget -O smartdns-debian-all.deb "https://github.com/pymumu/smartdns/releases/download/Release43/smartdns.1.2023.08.11-1937.x86-debian-all.deb"
+  dpkg -i smartdns-debian-all.deb && rm smartdns-debian-all.deb
+  cat >> /etc/smartdns/smartdns.conf <<-EOF
+
+# Cloudflare DoH
+server-https https://1.1.1.1/dns-query
+# Google DoH
+server-https https://dns.google/dns-query
+
+EOF
+  echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+  chattr +i /etc/resolv.conf
+  systemctl restart smartdns
+  systemctl enable smartdns
+  coloredEcho $GREEN " smartdns 安装完成"
+}
 checkRoot
 apt_source
 fail2ban_install
 ssh_key_install $1 $2
-cloudflare_doh_install
 besttrace_install
+#cloudflare_doh_install
+#dnscrypt_proxy_install
+smartdns_install
 
 read -p "系统初始化完成，建议重启后安装BBR，是否现在重启 ? [Y/n] :" yn
 [ -z "${yn}" ] && yn="y"
