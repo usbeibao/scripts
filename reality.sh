@@ -733,7 +733,7 @@ install() {
   initRealityClientServersName
   configXray
 
-  systemctl restart nginx
+  pkill -9 nginx && systemctl restart nginx
   systemctl restart xray
   sleep 2
   coloredEcho $BLUE " 安装完成"
