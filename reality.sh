@@ -116,7 +116,7 @@ getInput() {
   DOMAIN=${VMESS_DOMAIN,,}
   coloredEcho ${BLUE}  " vmess伪装域名(host)：$VMESS_DOMAIN"
 
-  echo ""checkSystem
+  echo ""
   read -p " 请设置SS连接密码，回车随机生成:" PASSWORD
   [[ -z "$PASSWORD" ]] && PASSWORD=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
   coloredEcho $BLUE " SS密码：$PASSWORD"
