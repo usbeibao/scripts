@@ -83,6 +83,33 @@ archAffix(){
     return 0
 }
 
+checkSystem() {
+    if [[ -f "/etc/issue" ]] && grep </etc/issue -q -i "debian"  [[ -f "/proc/version" ]] && grep </etc/issue -q -i "debian"  [[ -f "/etc/os-release" ]] && grep </etc/os-release -q -i "ID=debian"; then
+        release="debian"
+        installType='apt -y install'
+        upgrade="apt update"
+        updateReleaseInfoChange='apt-get --allow-releaseinfo-change update'
+        removeType='apt -y autoremove'
+
+    elif [[ -f "/etc/issue" ]] && grep </etc/issue -q -i "ubuntu" || [[ -f "/proc/version" ]] && grep </etc/issue -q -i "ubuntu"; then
+        release="ubuntu"
+        installType='apt -y install'
+        upgrade="apt update"
+        updateReleaseInfoChange='apt-get --allow-releaseinfo-change update'
+        removeType='apt -y autoremove'
+        if grep </etc/issue -q -i "16."; then
+            release=
+        fi
+    fi
+
+    if [[ -z ${release} ]]; then
+        echoContent red "\n本脚本不支持此系统，请将下方日志反馈给开发者\n"
+        echoContent yellow "$(cat /etc/issue)"
+        echoContent yellow "$(cat /proc/version)"
+        exit 0
+    fi
+}
+
 getInput() {
   echo ""
   read -p " 请输入vmess伪装域名：" VMESS_DOMAIN
@@ -182,6 +209,28 @@ initRealityClientServersName() {
     fi
 
     coloredEcho ${YELLOW} "\n ---> 客户端可用域名: ${realityServerNames}\n"
+}
+
+installNginx() { 
+
+    if [[ "${release}" == "debian" ]]; then
+        sudo apt install gnupg2 ca-certificates lsb-release -y >/dev/null 2>&1
+        echo "deb http://nginx.org/packages/mainline/debian $(lsb_release -cs) nginx" | sudo tee /etc/apt/sources.list.d/nginx.list >/dev/null 2>&1
+        echo -e "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" | sudo tee /etc/apt/preferences.d/99nginx >/dev/null 2>&1
+        curl -o /tmp/nginx_signing.key https://nginx.org/keys/nginx_signing.key >/dev/null 2>&1
+        # gpg --dry-run --quiet --import --import-options import-show /tmp/nginx_signing.key
+        sudo mv /tmp/nginx_signing.key /etc/apt/trusted.gpg.d/nginx_signing.asc
+        sudo apt update >/dev/null 2>&1
+
+    elif [[ "${release}" == "ubuntu" ]]; then
+        sudo apt install gnupg2 ca-certificates lsb-release -y >/dev/null 2>&1
+        echo "deb http://nginx.org/packages/mainline/ubuntu $(lsb_release -cs) nginx" | sudo tee /etc/apt/sources.list.d/nginx.list >/dev/null 2>&1
+        echo -e "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" | sudo tee /etc/apt/preferences.d/99nginx >/dev/null 2>&1
+        curl -o /tmp/nginx_signing.key https://nginx.org/keys/nginx_signing.key >/dev/null 2>&1
+        sudo mv /tmp/nginx_signing.key /etc/apt/trusted.gpg.d/nginx_signing.asc
+        sudo apt update >/dev/null 2>&1
+    fi
+    ${installType} nginx python3-certbot-nginx >/dev/null 2>&1
 }
 
 configNginx() {
@@ -666,20 +715,15 @@ configXray() {
 EOF
 }
 
-
-
-
-
 install() {
   apt clean all
   apt update -y
   apt install sudo wget vim unzip tar net-tools dnsutils mtr mlocate xz-utils openssl libssl-dev gcc g++ -y
 
-  echo ""
-  coloredEcho $BLUE " 清理nginx依赖..."
-  apt purge nginx nginx-common nginx-full -y
+  echo “”
   coloredEcho $BLUE " 安装nginx..."
-  apt install nginx python3-certbot-nginx -y
+  installNginx
+  systemctl daemon-reload
   systemctl enable nginx
 
   coloredEcho $BLUE " 申请证书..."
