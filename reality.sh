@@ -677,7 +677,7 @@ install() {
 
   echo ""
   coloredEcho $BLUE " 安装nginx..."
-  apt install nginx -y
+  apt install nginx python3-certbot-nginx
   systemctl enable nginx
 
   coloredEcho $BLUE " 申请证书..."
