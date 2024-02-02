@@ -427,8 +427,6 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
-  systemctl daemon-reload
-  systemctl restart nginx
 }
 
 installXray() {
@@ -474,8 +472,8 @@ RestartPreventExitStatus=23
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl daemon-reload
-    systemctl enable xray.service
+  systemctl daemon-reload
+  systemctl enable nginx
 }
 
 configXray() {
@@ -709,6 +707,8 @@ configXray() {
   }
 }
 EOF
+  systemctl daemon-reload
+  systemctl enable xray
 }
 
 install() {
@@ -719,8 +719,6 @@ install() {
   echo “”
   coloredEcho $BLUE " 安装nginx..."
   installNginx
-  systemctl daemon-reload
-  systemctl enable nginx
 
   coloredEcho $BLUE " 申请证书..."
   getCert
