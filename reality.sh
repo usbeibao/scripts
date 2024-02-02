@@ -677,9 +677,9 @@ install() {
 
   echo ""
   coloredEcho $BLUE " 清理nginx依赖..."
-  apt purge nginx nginx-common nginx-full
+  apt purge nginx nginx-common nginx-full -y
   coloredEcho $BLUE " 安装nginx..."
-  apt install nginx python3-certbot-nginx
+  apt install nginx python3-certbot-nginx -y
   systemctl enable nginx
 
   coloredEcho $BLUE " 申请证书..."
