@@ -40,6 +40,15 @@ update-locale LC_TIME=C.UTF-8
 # 安装chrony
 apt update 
 apt install -y chrony
+if [[ $? -eq 0 ]]; then
+  echo "chrony 安装成功"
+else
+  echo "chrony 安装失败，安装deb包..."
+  #下载 chrony deb 包
+  wget http://ftp.de.debian.org/debian/pool/main/c/chrony/chrony_4.3-2+deb12u1_amd64.deb
+  #安装 chrony deb 包
+  dpkg -i chrony_4.3-2+deb12u1_amd64.deb
+fi
 
 # 配置chrony
 sed -i 's/^pool/#&/' /etc/chrony/chrony.conf
