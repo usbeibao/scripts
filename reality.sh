@@ -676,6 +676,8 @@ install() {
   apt install sudo wget vim unzip tar net-tools dnsutils mtr mlocate xz-utils openssl libssl-dev gcc g++ -y
 
   echo ""
+  coloredEcho $BLUE " 清理nginx依赖..."
+  apt purge nginx nginx-common nginx-full
   coloredEcho $BLUE " 安装nginx..."
   apt install nginx python3-certbot-nginx
   systemctl enable nginx
