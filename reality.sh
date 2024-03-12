@@ -13,7 +13,7 @@ PLAIN='\033[0m'
 XRAY_CONFIG_FILE="/usr/local/etc/xray/config.json"
 NGINX_CONF_PATH="/etc/nginx/conf.d/"
 NGINX_SERVICE_FILE="/lib/systemd/system/nginx.service"
-XRAY_VER="v1.8.7"
+XRAY_VER="v1.8.9"
 
 coloredEcho() {
   echo -e "${1}${@:2}${PLAIN}"
@@ -472,12 +472,11 @@ RestartPreventExitStatus=23
 [Install]
 WantedBy=multi-user.target
 EOF
-  systemctl daemon-reload
-  systemctl enable nginx
+
 }
 
 configXray() {
-    mkdir -p /usr/local/xray
+    mkdir -p /usr/local/etc/xray/
    cat > $XRAY_CONFIG_FILE<< EOF
 {
   "log": {
