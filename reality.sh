@@ -431,7 +431,7 @@ EOF
 
 installXray() {
     rm -rf /tmp/xray
-    mkdir -p /tmp/xray/geo
+    mkdir -p /tmp/xray
     DOWNLOAD_LINK="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VER}/Xray-linux-$(archAffix).zip"
     GEOIP_LINK="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
     GEOSITE_LINK="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
