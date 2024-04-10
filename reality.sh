@@ -136,10 +136,11 @@ getInput() {
   coloredEcho ${BLUE}  " ws路径：$WSPATH"
 
   echo ""
-  read -p " 请设置reality端口，回车随机10000-30000:" reality_Port
+  read -p "请设置reality端口，回车随机20000-30000:" reality_Port
   if [[ -z "${reality_Port}" ]]; then
-      reality_Port=$((RANDOM % 20001 + 10000))
+      reality_Port=$((RANDOM % 10001 + 20000))
   fi
+
   coloredEcho $BLUE " 密码：$reality_Port"
 
   PROXY_URL="https://bing.gifposter.com"
