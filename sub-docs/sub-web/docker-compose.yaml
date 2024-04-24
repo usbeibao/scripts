@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  subweb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: subweb-local:latest
+    container_name: subweb
+    ports:
+      - "58080:80"
+    restart: always
