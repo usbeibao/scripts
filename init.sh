@@ -153,6 +153,8 @@ server-https https://1.1.1.1/dns-query
 server-https https://dns.google/dns-query
 
 EOF
+  sed -i '54s|.*|bind 127.0.0.1:53\
+bind \[::1\]:53|' /etc/smartdns/smartdns.conf
   echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
   chattr +i /etc/resolv.conf
   systemctl restart smartdns
