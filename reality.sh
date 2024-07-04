@@ -13,7 +13,7 @@ PLAIN='\033[0m'
 XRAY_CONFIG_FILE="/usr/local/etc/xray/config.json"
 NGINX_CONF_PATH="/etc/nginx/conf.d/"
 NGINX_SERVICE_FILE="/lib/systemd/system/nginx.service"
-XRAY_VER="v1.8.10"
+XRAY_VER="v1.8.16"
 
 coloredEcho() {
   echo -e "${1}${@:2}${PLAIN}"
