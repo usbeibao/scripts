@@ -39,6 +39,7 @@ EOF
 
 fail2ban_install() {
   apt install fail2ban -y
+  [ ! -f /var/log/auth.log ] && touch /var/log/auth.log
   systemctl enable --now fail2ban
   
   mkdir -p /etc/nftables/
