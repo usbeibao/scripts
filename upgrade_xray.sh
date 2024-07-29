@@ -23,18 +23,15 @@ fetch_latest_version() {
 
 VERSION=${1:-$(fetch_latest_version)}
 
-cd
 mkdir -p xray_update && cd xray_update
 
 wget "https://github.com/XTLS/Xray-core/releases/download/$VERSION/Xray-linux-64.zip"
 if [ $? -eq 0 ]; then
     unzip Xray-linux-64.zip
     mv xray /usr/local/bin/
+    cd .. && rm -rf xray_update
     systemctl restart xray
     echo "Xray已更新至版本 $VERSION，并已重启服务。"
 else
     echo "下载Xray失败，请检查提供的版本号和网络连接。"
 fi
-
-cd ..
-rm -rf xray_update
