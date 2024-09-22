@@ -231,7 +231,7 @@ installNginx() {
         sudo mv /tmp/nginx_signing.key /etc/apt/trusted.gpg.d/nginx_signing.asc
         sudo apt update >/dev/null 2>&1
     fi
-    ${installType} nginx python3-certbot-nginx >/dev/null 2>&1
+    ${installType} nginx python3-certbot-nginx
 }
 
 configNginx() {
