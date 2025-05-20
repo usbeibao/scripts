@@ -144,7 +144,7 @@ dnscrypt_proxy_install() {
 }
 
 smartdns_install() {
-  wget -O smartdns-debian-all.deb "https://github.com/pymumu/smartdns/releases/download/Release43/smartdns.1.2023.08.11-1937.x86-debian-all.deb"
+  wget -O smartdns-debian-all.deb "https://github.com/pymumu/smartdns/releases/download/Release46.1/smartdns.1.2025.03.02-1533.x86-debian-all.deb"
   dpkg -i smartdns-debian-all.deb && rm smartdns-debian-all.deb
   cat >> /etc/smartdns/smartdns.conf <<-EOF
 
@@ -155,7 +155,7 @@ server-https https://dns.google/dns-query
 
 EOF
   sed -i '54s|.*|bind 127.0.0.1:53\
-bind \[::1\]:53|' /etc/smartdns/smartdns.conf
+  bind \[::1\]:53|' /etc/smartdns/smartdns.conf && sed -i '/^bind \[::\]:53/d' /etc/smartdns/smartdns.conf
   echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
   chattr +i /etc/resolv.conf
   systemctl restart smartdns
