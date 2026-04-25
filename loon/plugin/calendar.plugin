@@ -1,0 +1,11 @@
+#!name = 📅 日历助手 Pro
+#!desc = 每日推送：法定节假日倒计时 + 补班提醒 + 今日黄历 + 传统节日 + 生日/纪念日提醒。支持公历和农历生日分别添加。
+#!author = sift
+#!homepage = https://github.com/YOUR_USERNAME/loon-calendar
+#!icon = https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png
+#!input = 公历生日, 格式：姓名:月-日，逗号分隔。如：女儿:3-15,老婆:8-22,朋友:12-1
+#!input = 农历生日, 格式：姓名:月-日，逗号分隔（系统自动换算）。如：妈妈:1-15,爸爸:6-初一,奶奶:8-15
+#!input = 纪念日提醒, 格式：名称:月-日（公历），逗号分隔。如：结婚纪念日:9-18,恋爱纪念日:2-14
+
+[Script]
+cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/refs/heads/main/loon/js/calendar.js, tag=日历助手
