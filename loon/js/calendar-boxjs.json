@@ -1,34 +1,51 @@
 {
-  "id": "sift.calendar",
-  "name": "📅 日历助手 Pro",
-  "desc": "法定节假日倒计时、补班提醒、黄历宜忌、传统节日、公历/农历生日、纪念日提醒",
+  "id": "sift.scripts.sub",
+  "name": "Sift 脚本订阅",
+  "desc": "日历助手 Pro 配置面板",
+  "author": "@sift",
   "icon": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png",
-  "keys": [
-    "公历生日",
-    "农历生日",
-    "纪念日提醒"
-  ],
-  "settings": [
+  "repo": "https://github.com/YOUR_USERNAME/loon-calendar",
+  "apps": [
     {
-      "id": "公历生日",
-      "name": "公历生日",
-      "type": "text",
-      "desc": "格式：姓名:月-日，多人逗号分隔。如：女儿:3-15,老婆:8-22",
-      "placeholder": "女儿:3-15,老婆:8-22,朋友:12-1"
-    },
-    {
-      "id": "农历生日",
-      "name": "农历生日",
-      "type": "text",
-      "desc": "格式：姓名:月-日，支持汉字（初一/十五等），多人逗号分隔。如：妈妈:1-15,爸爸:6-初一",
-      "placeholder": "妈妈:1-15,爸爸:6-初一,奶奶:8-15"
-    },
-    {
-      "id": "纪念日提醒",
-      "name": "纪念日提醒（公历）",
-      "type": "text",
-      "desc": "格式：名称:月-日，多个逗号分隔。如：结婚纪念日:9-18,恋爱纪念日:2-14",
-      "placeholder": "结婚纪念日:9-18,恋爱纪念日:2-14"
+      "id": "sift.calendar",
+      "name": "📅 日历助手 Pro",
+      "author": "@sift",
+      "desc": "法定节假日倒计时、补班提醒、黄历宜忌、传统节日、公历/农历生日、纪念日提醒",
+      "icons": [
+        "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png",
+        "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png"
+      ],
+      "keys": [
+        "公历生日",
+        "农历生日",
+        "纪念日提醒"
+      ],
+      "settings": [
+        {
+          "id": "公历生日",
+          "name": "公历生日",
+          "val": "",
+          "type": "text",
+          "desc": "格式：姓名:月-日，多人逗号分隔",
+          "placeholder": "女儿:3-15,老婆:8-22,朋友:12-1"
+        },
+        {
+          "id": "农历生日",
+          "name": "农历生日",
+          "val": "",
+          "type": "text",
+          "desc": "格式：姓名:月-日，支持汉字（初一/十五等），多人逗号分隔",
+          "placeholder": "妈妈:1-15,爸爸:6-初一,奶奶:8-15"
+        },
+        {
+          "id": "纪念日提醒",
+          "name": "纪念日提醒（公历）",
+          "val": "",
+          "type": "text",
+          "desc": "格式：名称:月-日，多个逗号分隔",
+          "placeholder": "结婚纪念日:9-18,恋爱纪念日:2-14"
+        }
+      ]
     }
   ]
 }
