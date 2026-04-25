@@ -190,10 +190,11 @@ function pushNotifications() {
 
   // 公历生日
   var birthdaysToday=[], birthdaysSoon=[];
+  var SHOW_DAYS = 30; // 主通知显示范围
   parseSolarList($persistentStore.read("公历生日")||"").forEach(function(b){
     var diff=solarDiff(T.full,T.year,b.mmdd);
     if(diff===0) birthdaysToday.push(b.name+"（公历）");
-    else if(diff>0&&diff<=WARN_DAYS) birthdaysSoon.push({name:b.name+"（公历）",diff:diff});
+    else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（公历）",diff:diff});
   });
 
   // 农历生日
@@ -207,7 +208,7 @@ function pushNotifications() {
       var diff=daysDiff(T.full,solar);
       if(diff<0){ solar=lunarToSolar(T.year+1,b.lunarMonth,b.lunarDay); diff=daysDiff(T.full,solar); }
       if(diff===0) birthdaysToday.push(b.name+"（农历）");
-      else if(diff>0&&diff<=WARN_DAYS) birthdaysSoon.push({name:b.name+"（农历）",diff:diff,solar:solar});
+      else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（农历）",diff:diff,solar:solar});
     } catch(e){}
   });
 
@@ -216,7 +217,7 @@ function pushNotifications() {
   parseSolarList($persistentStore.read("纪念日提醒")||"").forEach(function(a){
     var diff=solarDiff(T.full,T.year,a.mmdd);
     if(diff===0) annivToday.push(a.name);
-    else if(diff>0&&diff<=WARN_DAYS) annivSoon.push({name:a.name,diff:diff});
+    else if(diff>0&&diff<=SHOW_DAYS) annivSoon.push({name:a.name,diff:diff});
   });
 
   // ── 推送 ──────────────────────────────────────────────────────────────────
@@ -242,13 +243,27 @@ function pushNotifications() {
     $notification.post("⚠️ 明天要补班！","明天（"+tmrStr+"）是"+tmrComp+"假期的补班日","记得定好明天的闹钟 ⏰");
   }
 
-  // 生日/纪念日倒计时
+  // 生日/纪念日前1-3天单独预警通知
   birthdaysSoon.forEach(function(b){
-    $notification.post("🎂 生日提醒",b.name+" 的生日还有 "+b.diff+" 天"+(b.solar?" (公历"+b.solar+")" : ""),"");
+    if (b.diff<=WARN_DAYS) {
+      $notification.post("🎂 生日提醒", b.name+" 的生日还有 "+b.diff+" 天", b.solar ? "公历 "+b.solar : "");
+    }
   });
   annivSoon.forEach(function(a){
-    $notification.post("💑 纪念日提醒",a.name+" 还有 "+a.diff+" 天","");
+    if (a.diff<=WARN_DAYS) {
+      $notification.post("💑 纪念日提醒", a.name+" 还有 "+a.diff+" 天", "");
+    }
   });
+
+  // 收集所有未来30天内的生日和纪念日，用于主通知显示
+  var upcomingPersonal=[];
+  birthdaysSoon.forEach(function(b){
+    upcomingPersonal.push({emoji:"🎂", name:b.name, diff:b.diff});
+  });
+  annivSoon.forEach(function(a){
+    upcomingPersonal.push({emoji:"💑", name:a.name, diff:a.diff});
+  });
+  upcomingPersonal.sort(function(a,b){return a.diff-b.diff;});
 
   // 主通知
   var mainLines=[];
@@ -259,6 +274,10 @@ function pushNotifications() {
   });
   festivalsUpcoming.sort(function(a,b){return a.diff-b.diff;}).slice(0,2).forEach(function(f){
     mainLines.push("🏮 "+f.name+"还有 "+f.diff+" 天");
+  });
+  // 最近生日/纪念日（最多显示2个）
+  upcomingPersonal.slice(0,2).forEach(function(p){
+    mainLines.push(p.emoji+" "+p.name+"还有 "+p.diff+" 天");
   });
   if (almanacText) mainLines.push("",almanacText);
 
