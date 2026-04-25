@@ -13,10 +13,28 @@ var MOBILE_UA       = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Ap
 // ─── 传统节日（公历固定，已排除法定节假日中的元旦/劳动节/国庆节，避免重复）──
 var SOLAR_FESTIVALS = [
   {name:"情人节",date:"02-14"},{name:"妇女节",date:"03-08"},{name:"愚人节",date:"04-01"},
-  {name:"儿童节",date:"06-01"},{name:"建党节",date:"07-01"},{name:"建军节",date:"08-01"},
-  {name:"教师节",date:"09-10"},{name:"万圣节",date:"10-31"},{name:"平安夜",date:"12-24"},
-  {name:"圣诞节",date:"12-25"},
+  {name:"520",date:"05-20"},{name:"儿童节",date:"06-01"},
+  {name:"建党节",date:"07-01"},{name:"建军节",date:"08-01"},
+  {name:"教师节",date:"09-10"},{name:"万圣节",date:"10-31"},
+  {name:"平安夜",date:"12-24"},{name:"圣诞节",date:"12-25"},
 ];
+
+// 计算某年母亲节（5月第二个周日）和父亲节（6月第三个周日）的公历日期
+function getNthWeekday(year, month, weekday, nth) {
+  // weekday: 0=周日, nth: 第几个
+  var d = new Date(year, month-1, 1);
+  var first = d.getDay(); // 1号是周几
+  var offset = (weekday - first + 7) % 7;
+  return new Date(year, month-1, 1 + offset + (nth-1)*7);
+}
+function getMotherDay(year) {
+  var d = getNthWeekday(year, 5, 0, 2);
+  return (d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();
+}
+function getFatherDay(year) {
+  var d = getNthWeekday(year, 6, 0, 3);
+  return (d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();
+}
 
 // ─── 传统节日（农历浮动，已排除法定节假日中的端午/中秋/春节，避免重复）────
 var LUNAR_FESTIVALS = [
@@ -31,8 +49,8 @@ var LUNAR_FESTIVALS = [
 
 var FESTIVAL_EMOJI = {
   春节:"🧧",除夕:"🧨",元宵节:"🏮",元旦:"🎊",中秋节:"🌕",端午节:"🐉",
-  七夕:"💝",情人节:"💕",儿童节:"🎈",圣诞节:"🎄",冬至:"❄️",重阳节:"🍂",
-  国庆节:"🇨🇳",劳动节:"👷",
+  七夕:"💝",情人节:"💕","520":"💌",儿童节:"🎈",圣诞节:"🎄",冬至:"❄️",重阳节:"🍂",
+  国庆节:"🇨🇳",劳动节:"👷",母亲节:"👩",父亲节:"👨",平安夜:"🎁",万圣节:"🎃",
 };
 
 // ─── 农历算法（月首表法，精确覆盖2024-2030年）──────────────────────────────────
@@ -177,8 +195,21 @@ function pushNotifications() {
 
   // 传统节日
   var festivalsToday=[], festivalsUpcoming=[];
+
+  // 公历固定节日
   SOLAR_FESTIVALS.forEach(function(f){
     var diff=solarDiff(T.full,T.year,f.date);
+    if(diff===0) festivalsToday.push(f.name);
+    else if(diff>0&&diff<=7) festivalsUpcoming.push({name:f.name,diff:diff});
+  });
+
+  // 母亲节（5月第二个周日）、父亲节（6月第三个周日）
+  var floatFestivals=[
+    {name:"母亲节", mmdd:getMotherDay(T.year)},
+    {name:"父亲节", mmdd:getFatherDay(T.year)},
+  ];
+  floatFestivals.forEach(function(f){
+    var diff=solarDiff(T.full,T.year,f.mmdd);
     if(diff===0) festivalsToday.push(f.name);
     else if(diff>0&&diff<=7) festivalsUpcoming.push({name:f.name,diff:diff});
   });
