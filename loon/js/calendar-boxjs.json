@@ -1,10 +1,10 @@
 {
   "id": "sift.scripts.sub",
   "name": "Sift 脚本订阅",
-  "desc": "日历助手 Pro 配置面板",
+  "desc": "日历助手 Pro + 每日早报 配置面板",
   "author": "@sift",
   "icon": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png",
-  "repo": "https://github.com/YOUR_USERNAME/loon-calendar",
+  "repo": "https://github.com/usbeibao/scripts",
   "apps": [
     {
       "id": "sift.calendar",
@@ -15,11 +15,7 @@
         "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png",
         "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png"
       ],
-      "keys": [
-        "公历生日",
-        "农历生日",
-        "纪念日提醒"
-      ],
+      "keys": ["公历生日", "农历生日", "纪念日提醒"],
       "settings": [
         {
           "id": "公历生日",
@@ -44,6 +40,52 @@
           "type": "text",
           "desc": "格式：名称:月-日，多个逗号分隔",
           "placeholder": "结婚纪念日:9-18,恋爱纪念日:2-14"
+        }
+      ]
+    },
+    {
+      "id": "sift.daily",
+      "name": "📰 每日早报",
+      "author": "@sift",
+      "desc": "天气 + 汇率 + 油价 + 节假日 + 热搜，发送到 Telegram",
+      "icons": [
+        "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/telegram.png",
+        "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/telegram.png"
+      ],
+      "keys": ["每日早报城市", "地区"],
+      "settings": [
+        {
+          "id": "每日早报城市",
+          "name": "天气城市",
+          "val": "Shanghai",
+          "type": "text",
+          "desc": "填写城市名（支持中英文），如：Shanghai / Tokyo / 上海 / 东京",
+          "placeholder": "Shanghai"
+        },
+        {
+          "id": "地区",
+          "name": "油价省份",
+          "val": "上海",
+          "type": "select",
+          "desc": "选择油价查询省份",
+          "options": [
+            {"key":"上海","label":"上海"},{"key":"北京","label":"北京"},
+            {"key":"天津","label":"天津"},{"key":"重庆","label":"重庆"},
+            {"key":"广东","label":"广东"},{"key":"江苏","label":"江苏"},
+            {"key":"浙江","label":"浙江"},{"key":"山东","label":"山东"},
+            {"key":"福建","label":"福建"},{"key":"安徽","label":"安徽"},
+            {"key":"江西","label":"江西"},{"key":"河南","label":"河南"},
+            {"key":"河北","label":"河北"},{"key":"山西","label":"山西"},
+            {"key":"陕西","label":"陕西"},{"key":"湖北","label":"湖北"},
+            {"key":"湖南","label":"湖南"},{"key":"四川","label":"四川"},
+            {"key":"贵州","label":"贵州"},{"key":"云南","label":"云南"},
+            {"key":"广西","label":"广西"},{"key":"海南","label":"海南"},
+            {"key":"辽宁","label":"辽宁"},{"key":"吉林","label":"吉林"},
+            {"key":"黑龙江","label":"黑龙江"},{"key":"内蒙古","label":"内蒙古"},
+            {"key":"新疆","label":"新疆"},{"key":"西藏","label":"西藏"},
+            {"key":"青海","label":"青海"},{"key":"甘肃","label":"甘肃"},
+            {"key":"宁夏","label":"宁夏"}
+          ]
         }
       ]
     }
