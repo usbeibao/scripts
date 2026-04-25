@@ -8,4 +8,4 @@
 #!select = 地区, 上海, 北京, 天津, 重庆, 广东, 江苏, 浙江, 山东, 福建, 安徽, 江西, 河南, 河北, 山西, 陕西, 湖北, 湖南, 四川, 贵州, 云南, 广西, 海南, 辽宁, 吉林, 黑龙江, 内蒙古, 新疆, 西藏, 青海, 甘肃, 宁夏
 
 [Script]
-cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/youjia.js, tag=今日油价
+cron "30 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/youjia.js, tag=今日油价
