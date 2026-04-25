@@ -10,27 +10,23 @@ var ALMANAC_BASE    = "https://raw.githubusercontent.com/zqzess/openApiData/main
 var WARN_DAYS       = 3;
 var MOBILE_UA       = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15";
 
-// ─── 传统节日（公历固定）────────────────────────────────────────────────────
+// ─── 传统节日（公历固定，已排除法定节假日中的元旦/劳动节/国庆节，避免重复）──
 var SOLAR_FESTIVALS = [
-  {name:"元旦",date:"01-01"},{name:"情人节",date:"02-14"},{name:"妇女节",date:"03-08"},
-  {name:"愚人节",date:"04-01"},{name:"劳动节",date:"05-01"},{name:"儿童节",date:"06-01"},
-  {name:"建党节",date:"07-01"},{name:"建军节",date:"08-01"},{name:"教师节",date:"09-10"},
-  {name:"国庆节",date:"10-01"},{name:"万圣节",date:"10-31"},{name:"平安夜",date:"12-24"},
+  {name:"情人节",date:"02-14"},{name:"妇女节",date:"03-08"},{name:"愚人节",date:"04-01"},
+  {name:"儿童节",date:"06-01"},{name:"建党节",date:"07-01"},{name:"建军节",date:"08-01"},
+  {name:"教师节",date:"09-10"},{name:"万圣节",date:"10-31"},{name:"平安夜",date:"12-24"},
   {name:"圣诞节",date:"12-25"},
 ];
 
-// ─── 传统节日（农历浮动）────────────────────────────────────────────────────
+// ─── 传统节日（农历浮动，已排除法定节假日中的端午/中秋/春节，避免重复）────
 var LUNAR_FESTIVALS = [
   {name:"元宵节",dates:["2025-02-12","2026-03-03","2027-02-20","2028-02-09"]},
   {name:"龙抬头",dates:["2025-03-01","2026-03-19","2027-03-09","2028-02-26"]},
-  {name:"端午节",dates:["2025-05-31","2026-06-19","2027-06-09","2028-05-28"]},
   {name:"七夕",  dates:["2025-08-29","2026-08-19","2027-08-08","2028-08-26"]},
   {name:"中元节",dates:["2025-09-11","2026-09-01","2027-08-21","2028-09-08"]},
-  {name:"中秋节",dates:["2025-10-06","2026-09-25","2027-09-15","2028-10-03"]},
   {name:"重阳节",dates:["2025-10-29","2026-10-19","2027-11-08","2028-10-26"]},
   {name:"冬至",  dates:["2025-12-22","2026-12-22","2027-12-22","2028-12-21"]},
   {name:"除夕",  dates:["2025-01-28","2026-02-16","2027-02-05","2028-01-25"]},
-  {name:"春节",  dates:["2025-01-29","2026-02-17","2027-02-06","2028-01-26"]},
 ];
 
 var FESTIVAL_EMOJI = {
@@ -285,7 +281,9 @@ function fetchAlmanacThenPush() {
         for (var i=0;i<list.length;i++) {
           var item=list[i];
           if (item.year===String(T.year)&&item.month===String(parseInt(T.month))&&item.day===String(parseInt(T.day))) {
-            almanacText="农历"+item.lMonth+"月"+item.lDate+" · "+item.gzYear+"年"+item.gzMonth+"月"+item.gzDay+"日\n✅宜："+(item.suit||"-")+"\n🈲忌："+(item.avoid||"-");
+            var gzDay = item.gzDay || item.gz_day || item.gzRi || "";
+            var gzStr = item.gzYear+"年"+item.gzMonth+"月"+(gzDay ? gzDay+"日" : "");
+            almanacText="农历"+item.lMonth+"月"+item.lDate+" · "+gzStr+"\n✅宜："+(item.suit||"-")+"\n🈲忌："+(item.avoid||"-");
             break;
           }
         }
