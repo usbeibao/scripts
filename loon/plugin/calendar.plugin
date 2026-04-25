@@ -8,4 +8,4 @@
 #!input = 纪念日提醒, 格式：名称:月-日（公历），逗号分隔。如：结婚纪念日:9-18,恋爱纪念日:2-14
 
 [Script]
-cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/refs/heads/main/loon/js/calendar.js, tag=日历助手
+cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历助手
