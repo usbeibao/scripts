@@ -6,7 +6,6 @@
  */
 
 // ─── 省份映射 ─────────────────────────────────────────────────
-// iamwawa 用不含省/市的简称，小熊用全称
 const PROVINCE_MAP = {
   "上海":   { iamwawa: "上海",   bear: "上海市" },
   "北京":   { iamwawa: "北京",   bear: "北京市" },
@@ -53,8 +52,28 @@ const MOBILE_UA   = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Appl
 function httpGet(url, ua) {
   return new Promise((resolve, reject) => {
     $httpClient.get(
-      { url, timeout: 10000, headers: { "user-agent": ua || MOBILE_UA } },
-      (err, _resp, data) => { err ? reject(err) : resolve(data); }
+      {
+        url,
+        timeout: 10000,
+        headers: {
+          "User-Agent": ua || MOBILE_UA,
+          "Accept": "*/*",
+          "Accept-Language": "zh-CN,zh;q=0.9"
+        }
+      },
+      (err, resp, data) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        if (!data) {
+          reject("empty response");
+          return;
+        }
+
+        resolve(data);
+      }
     );
   });
 }
@@ -70,24 +89,27 @@ function finish(title, subtitle, body) {
   let lastDate = "";
   let nextDate = "";
 
-  // 1. iamwawa — 获取价格（JSON）
+  // 1. iamwawa：获取油价 JSON
   try {
-    const raw  = await httpGet(IAMWAWA_URL, "iamwawa-open-api");
+    const raw = await httpGet(IAMWAWA_URL, "iamwawa-open-api");
     const json = JSON.parse(raw);
-    if (json.status === 1 && json.data) {
+
+    if (json && json.status === 1 && json.data) {
       prices = json.data;
     } else {
-      console.log(`[iamwawa] 异常响应: ${raw.slice(0, 200)}`);
+      console.log(`[iamwawa] 异常响应: ${String(raw).slice(0, 300)}`);
     }
   } catch (e) {
     console.log(`[iamwawa] 请求失败: ${e}`);
   }
 
-  // 2. 小熊油耗 — 获取调价日期（HTML）
+  // 2. 小熊油耗：获取调价日期 HTML
   try {
     const html = await httpGet(BEAR_URL);
+
     const mLast = html.match(/上次调价[：:]\s*<strong>([\d-]+)<\/strong>/);
     const mNext = html.match(/下次调价[：:]\s*<strong>([\d-]+)<\/strong>/);
+
     if (mLast) lastDate = mLast[1];
     if (mNext) nextDate = mNext[1];
   } catch (e) {
@@ -96,24 +118,31 @@ function finish(title, subtitle, body) {
 
   // 3. 价格获取失败则告警退出
   if (!prices) {
-    finish(`⛽️ ${key}油价 ⚠️`, "价格获取失败", "iamwawa 接口异常，请稍后再试");
+    finish(
+      `⛽️ ${key}油价 ⚠️`,
+      "价格获取失败",
+      "iamwawa 接口异常，请稍后再试"
+    );
     return;
   }
 
-  const p92 = prices.p92 || "-";
-  const p95 = prices.p95 || "-";
-  const p98 = prices.p98 || "-";
-  const p0  = prices.p0  || "-";
+  const p92 = prices.p92 || prices.oil92 || prices["92"] || "-";
+  const p95 = prices.p95 || prices.oil95 || prices["95"] || "-";
+  const p98 = prices.p98 || prices.oil98 || prices["98"] || "-";
+  const p0  = prices.p0  || prices.oil0  || prices["0"]  || "-";
 
-  // 4. 组装通知
-  // 副标题：调价日期（有则显示，无则只显示省份名）
+  // 4. 组装通知副标题
   let subtitle = key;
+
   if (lastDate && nextDate) {
     subtitle = `上次 ${lastDate}  下次 ${nextDate}`;
   } else if (nextDate) {
     subtitle = `下次调价 ${nextDate}`;
+  } else if (lastDate) {
+    subtitle = `上次调价 ${lastDate}`;
   }
 
+  // 5. 组装通知正文
   const body = [
     `92号汽油   ${p92} 元/L`,
     `95号汽油   ${p95} 元/L`,
@@ -122,4 +151,8 @@ function finish(title, subtitle, body) {
   ].join("\n");
 
   finish(`⛽️ ${key}今日油价`, subtitle, body);
-})();
+})().catch((e) => {
+  console.log(`[脚本异常] ${e}`);
+  $notification.post("⛽️ 今日油价 ⚠️", "脚本执行失败", String(e));
+  $done({});
+});
