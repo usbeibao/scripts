@@ -188,33 +188,44 @@ function pushNotifications() {
   });
   todayIsOff.forEach(function(h){ if(festivalsToday.indexOf(h.name)<0) festivalsToday.push(h.name); });
 
+  // 公历生日（声明移到下方）
+  var SHOW_DAYS = 30;
+  var _solar_raw = $persistentStore.read("公历生日")||"";
+  var _lunar_raw = $persistentStore.read("农历生日")||"";
+  var _anniv_raw = $persistentStore.read("纪念日提醒")||"";
+  var todayLunar = solarToLunar(T.year, parseInt(T.month), parseInt(T.day));
+  console.log("[BoxJS] 公历生日="+_solar_raw);
+  console.log("[BoxJS] 农历生日="+_lunar_raw);
+  console.log("[BoxJS] 纪念日="+_anniv_raw);
+  console.log("[今天] 公历="+T.full+" 农历=月"+todayLunar.month+"日"+todayLunar.day);
+
   // 公历生日
   var birthdaysToday=[], birthdaysSoon=[];
-  var SHOW_DAYS = 30; // 主通知显示范围
-  parseSolarList($persistentStore.read("公历生日")||"").forEach(function(b){
+  parseSolarList(_solar_raw).forEach(function(b){
     var diff=solarDiff(T.full,T.year,b.mmdd);
     if(diff===0) birthdaysToday.push(b.name+"（公历）");
     else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（公历）",diff:diff});
   });
 
   // 农历生日
-  var todayLunar=solarToLunar(T.year,parseInt(T.month),parseInt(T.day));
-  parseLunarList($persistentStore.read("农历生日")||"").forEach(function(b){
+  parseLunarList(_lunar_raw).forEach(function(b){
+    console.log("[农历生日] 解析: "+b.name+" 农历"+b.lunarMonth+"-"+b.lunarDay);
     if(todayLunar.month===b.lunarMonth&&todayLunar.day===b.lunarDay){
       birthdaysToday.push(b.name+"（农历）"); return;
     }
     try {
       var solar=lunarToSolar(T.year,b.lunarMonth,b.lunarDay);
       var diff=daysDiff(T.full,solar);
+      console.log("[农历生日] "+b.name+" 对应公历="+solar+" diff="+diff);
       if(diff<0){ solar=lunarToSolar(T.year+1,b.lunarMonth,b.lunarDay); diff=daysDiff(T.full,solar); }
       if(diff===0) birthdaysToday.push(b.name+"（农历）");
       else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（农历）",diff:diff,solar:solar});
-    } catch(e){}
+    } catch(e){ console.log("[农历生日] 换算出错: "+e); }
   });
 
   // 纪念日
   var annivToday=[], annivSoon=[];
-  parseSolarList($persistentStore.read("纪念日提醒")||"").forEach(function(a){
+  parseSolarList(_anniv_raw).forEach(function(a){
     var diff=solarDiff(T.full,T.year,a.mmdd);
     if(diff===0) annivToday.push(a.name);
     else if(diff>0&&diff<=SHOW_DAYS) annivSoon.push({name:a.name,diff:diff});
