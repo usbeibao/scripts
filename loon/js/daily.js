@@ -508,9 +508,7 @@ function step_weibo(){
 }
 
 function step_almanac(){
-  var url=ALMANAC_BASE+"https://raw.githubusercontent.com/zqzess/openApiData/main/calendar/"+T.year+"/"+T.year+T.month+".json";
-  // 修正URL
-  url="https://raw.githubusercontent.com/zqzess/openApiData/main/calendar/"+T.year+"/"+T.year+T.month+".json";
+  var url="https://raw.githubusercontent.com/zqzess/openApiData/main/calendar/"+T.year+"/"+T.year+T.month+".json";
   httpGet(url, MOBILE_UA, 8000, function(err,data){
     if(!err&&data){
       try{
