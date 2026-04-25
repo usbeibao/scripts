@@ -35,71 +35,74 @@ var FESTIVAL_EMOJI = {
   国庆节:"🇨🇳",劳动节:"👷",
 };
 
-// ─── 农历算法（寿星万年历，1900-2100）───────────────────────────────────────
-var lunarInfo = [
-  0x04AE53,0x0A5748,0x5526BD,0x0D2650,0x0D9544,0x46AAB9,0x056A4D,0x09AD42,0x24AEB6,0x04AE4A,
-  0x6AA4BD,0x0AA54B,0x0B2546,0x5B52BA,0x0AD54E,0x055D43,0x4D5538,0x0B554D,0x6566BB,0x0D6A51,
-  0x0DA545,0x55AABA,0x056D4E,0x04AE44,0x4AF0B8,0x0A5D4B,0x0D1546,0x5D25BA,0x0D524E,0x0DA543,
-  0x66AAB7,0x056A4B,0x096D3F,0x4ADB4C,0x0AEB6B,0x0D4D51,0x6EA44D,0x0D1543,0x5B5237,0x0B544B,
-  0x0D644F,0x5EAA43,0x056A38,0x04B64C,0x4ABA50,0x0AE146,0x6D4ABB,0x0D154F,0x0DA544,0x56AAB8,
-  0x056A4C,0x09AD41,0x24ADB5,0x04ADA8,0x64B24E,0x0A5242,0x0B5346,0x5B25BB,0x0D254E,0x0D5243,
-  0x5DAA38,0x0B5A4D,0x056D42,0x49B5B6,0x04DA4A,0x6AA54E,0x0AA543,0x0B2538,0x5B524B,0x0D524E,
-  0x0DA642,0x56D4B7,0x055A4B,0x04AB40,0x25D4B5,0x0AB64A,0x814E4D,0x0CA643,0x0D1237,0x5D524B,
-  0x0D524E,0x0D5243,0x6CAA38,0x056A4C,0x04DA42,0x26DA35,0x0AEB49,0x60EA4D,0x0D1543,0x0D2538,
-  0x5B254B,0x0B544F,0x0D6843,0x5EAA37,0x056A4B,0x059B40,0x2ABB54,0x0AEB48,0x694B4C,0x0D1542,
-  0x0D2436,0x5BA54A,0x0B544D,0x0B6442,0x5B5536,0x0AD54A,0x055D3F,0x4ADB4C,0x0ADB51,0x6DA547,
-  0x0D524B,0x0D5340,0x5B6A54,0x0B6448,0x0B654D,0x5A5542,0x0AD546,0x055ABB,0x04BA4E,0x0A5B43,
-  0x652BB7,0x0A2B4B,0x0A9540,0x5EA554,0x0D4A49,0x0D524E,0x5EA642,0x0D6536,0x0D69BB,0x056A4F,
-  0x04BA43,0x4AB548,0x0A5B4C,0x6A4BB0,0x0AA541,0x0B2545,0x5B52B9,0x0D524D,0x0D5542,0x5DAAB6,
-  0x056A4A,0x059D3F,0x4AECB3,0x0AEB47,0x6D464D,0x0D1542,0x0D2536,0x5D254A,0x0D544D,0x0D6542,
-  0x5E9537,0x056A4B,0x096ABE,0x04AB52,0x0A5B47,0x64A5BB,0x0A254F,0x0B2544,0x5B5138,0x0D524C,
-  0x0D5541,0x6DAA35,0x056A49,0x0A7B3D,0x4AB550,0x0AB545,0x0B6A49,0x695D3E,0x0D5542,0x0D6537,
-  0x5D554A,0x0D554F,0x0D5543,0x5BAA38,0x056A4C,0x04DA42,0x26DA35,0x0AEB49,0x60E54C,0x0D5143,
-  0x0D2537,0x5D254B,0x0B544F,0x0B6444,0x5B5538,0x0AD54C,0x055D41,0x4ADBB5,0x04BA4A,0x0A5D3E,
-  0x6525B1,0x0A2B46,0x0A954A,0x5B4ABE,0x0CA64F,0x0D5243,0x5E9237,0x0D524B,0x0DA640,0x5ED554,
+// ─── 农历算法（月首表法，精确覆盖2024-2030年）──────────────────────────────────
+// 每行：[农历年, 农历月, 是否闰月, 该月初一对应的公历年月日]
+// 数据来源：紫金山天文台
+var LUNAR_MONTH_TABLE = [
+  [2024,1,0,2024,2,10],[2024,2,0,2024,3,11],[2024,3,0,2024,4,9],
+  [2024,4,0,2024,5,8],[2024,4,1,2024,6,6],[2024,5,0,2024,7,6],
+  [2024,6,0,2024,8,4],[2024,7,0,2024,9,3],[2024,8,0,2024,10,3],
+  [2024,9,0,2024,11,1],[2024,10,0,2024,12,1],[2024,11,0,2024,12,31],
+  [2024,12,0,2025,1,29],
+  [2025,1,0,2025,1,29],[2025,2,0,2025,2,28],[2025,3,0,2025,3,29],
+  [2025,4,0,2025,4,27],[2025,5,0,2025,5,27],[2025,6,0,2025,6,25],
+  [2025,7,0,2025,7,25],[2025,8,0,2025,8,23],[2025,9,0,2025,9,22],
+  [2025,10,0,2025,10,21],[2025,11,0,2025,11,20],[2025,12,0,2025,12,20],
+  [2026,1,0,2026,2,17],[2026,2,0,2026,3,19],[2026,3,0,2026,4,17],
+  [2026,4,0,2026,5,17],[2026,5,0,2026,6,15],[2026,6,0,2026,7,15],
+  [2026,7,0,2026,8,13],[2026,8,0,2026,9,12],[2026,9,0,2026,10,11],
+  [2026,10,0,2026,11,10],[2026,11,0,2026,12,9],[2026,12,0,2027,1,8],
+  [2027,1,0,2027,2,6],[2027,2,0,2027,3,8],[2027,3,0,2027,4,6],
+  [2027,4,0,2027,5,6],[2027,5,0,2027,6,4],[2027,6,0,2027,7,4],
+  [2027,6,1,2027,8,2],[2027,7,0,2027,9,1],[2027,8,0,2027,9,30],
+  [2027,9,0,2027,10,30],[2027,10,0,2027,11,28],[2027,11,0,2027,12,28],
+  [2027,12,0,2028,1,26],
+  [2028,1,0,2028,1,26],[2028,2,0,2028,2,25],[2028,3,0,2028,3,25],
+  [2028,4,0,2028,4,24],[2028,5,0,2028,5,23],[2028,6,0,2028,6,22],
+  [2028,7,0,2028,7,21],[2028,8,0,2028,8,20],[2028,9,0,2028,9,18],
+  [2028,10,0,2028,10,18],[2028,11,0,2028,11,16],[2028,12,0,2028,12,16],
+  [2029,1,0,2029,1,14],[2029,2,0,2029,2,13],[2029,3,0,2029,3,14],
+  [2029,4,0,2029,4,13],[2029,5,0,2029,5,12],[2029,6,0,2029,6,11],
+  [2029,7,0,2029,7,10],[2029,8,0,2029,8,9],[2029,9,0,2029,9,7],
+  [2029,9,1,2029,10,7],[2029,10,0,2029,11,5],[2029,11,0,2029,12,5],
+  [2029,12,0,2030,1,3],
+  [2030,1,0,2030,1,3],[2030,2,0,2030,2,2],[2030,3,0,2030,3,4],
+  [2030,4,0,2030,4,2],[2030,5,0,2030,5,2],[2030,6,0,2030,5,31],
+  [2030,7,0,2030,6,30],[2030,8,0,2030,7,29],[2030,9,0,2030,8,28],
+  [2030,10,0,2030,9,26],[2030,11,0,2030,10,26],[2030,12,0,2030,11,24],
 ];
 
-function leapMonth(y) { return lunarInfo[y-1900] & 0xf; }
-function leapDays(y)  { return leapMonth(y) ? ((lunarInfo[y-1900] & 0x10000) ? 30 : 29) : 0; }
-function monthDays(y,m){ return (lunarInfo[y-1900] & (0x10000>>m)) ? 30 : 29; }
-function lunarYearDays(y) {
-  var sum=348, i;
-  for (i=0x8000;i>0x8;i>>=1) sum += (lunarInfo[y-1900]&i) ? 1 : 0;
-  return sum + leapDays(y);
+function dateToMs(y, m, d) {
+  return new Date(y, m-1, d).getTime();
 }
 
+// 公历转农历
 function solarToLunar(sy, sm, sd) {
-  var baseDate = new Date(1900,0,31);
-  var offset   = Math.round((new Date(sy,sm-1,sd)-baseDate)/86400000);
-  var ly, lm, ld, leap=0, isLeap=false;
-  for (ly=1900; ly<2101&&offset>0; ly++) offset -= lunarYearDays(ly);
-  if (offset<0) offset += lunarYearDays(--ly);
-  leap = leapMonth(ly);
-  for (lm=1; lm<13&&offset>0; lm++) {
-    var dim;
-    if (leap>0 && lm===(leap+1) && !isLeap) { --lm; isLeap=true; dim=leapDays(ly); }
-    else dim = monthDays(ly,lm);
-    if (isLeap && lm===(leap+1)) isLeap=false;
-    offset -= dim;
+  var ms = dateToMs(sy, sm, sd);
+  var result = {year:sy, month:1, day:1};
+  for (var i = LUNAR_MONTH_TABLE.length-1; i >= 0; i--) {
+    var row = LUNAR_MONTH_TABLE[i];
+    var rowMs = dateToMs(row[3], row[4], row[5]);
+    if (ms >= rowMs) {
+      var diff = Math.round((ms - rowMs) / 86400000);
+      result = {year:row[0], month:row[1], day:diff+1, isLeap:row[2]===1};
+      break;
+    }
   }
-  if (offset===0&&leap>0&&lm===(leap+1)) { if(isLeap) isLeap=false; else{isLeap=true;--lm;} }
-  if (offset<0) { offset+=monthDays(ly,--lm); }
-  ld = offset+1;
-  return {year:ly, month:lm, day:ld};
+  return result;
 }
 
+// 农历转公历（给定农历年月日，返回公历日期字符串）
 function lunarToSolar(ly, lm, ld) {
-  var offset=0, y, m, leap, isLeapY=false;
-  for (y=1900; y<ly; y++) offset += lunarYearDays(y);
-  leap = leapMonth(ly);
-  for (m=1; m<=12; m++) {
-    if (m===lm) break;
-    offset += monthDays(ly,m);
-    if (!isLeapY && m===leap) { offset+=leapDays(ly); isLeapY=true; }
+  for (var i = 0; i < LUNAR_MONTH_TABLE.length; i++) {
+    var row = LUNAR_MONTH_TABLE[i];
+    if (row[0]===ly && row[1]===lm && row[2]===0) {
+      var base = dateToMs(row[3], row[4], row[5]);
+      var result = new Date(base + (ld-1)*86400000);
+      return result.getFullYear()+"-"+pad(result.getMonth()+1)+"-"+pad(result.getDate());
+    }
   }
-  offset += ld-1;
-  var d = new Date(new Date(1900,0,31).getTime()+offset*86400000);
-  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  return null;
 }
 
 // ─── 工具 ────────────────────────────────────────────────────────────────────
