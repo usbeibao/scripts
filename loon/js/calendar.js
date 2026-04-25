@@ -236,39 +236,6 @@ function pushNotifications() {
 
   // ── 推送 ──────────────────────────────────────────────────────────────────
 
-  // 当天祝福
-  var celebLines=[];
-  festivalsToday.forEach(function(n){ celebLines.push((FESTIVAL_EMOJI[n]||"🎉")+" 今天是"+n+"，祝你节日快乐！"); });
-  birthdaysToday.forEach(function(n){ celebLines.push("🎂 今天是"+n+"的生日，记得送上祝福！"); });
-  annivToday.forEach(function(n){     celebLines.push("💑 今天是"+n+"，祝你们幸福美满！"); });
-  if (celebLines.length>0) {
-    $notification.post("🎉 今日特别提醒", celebLines.join("\n"), almanacText||T.full);
-  }
-
-  // 节假日前1-3天预警
-  warnHols.forEach(function(h){
-    $notification.post("🔔 "+h.name+"还有"+h.daysUntil+"天",
-      h.startDate+" 起，放假 "+h.duration+" 天",
-      h.memo ? h.memo.slice(0,60)+"…" : "");
-  });
-
-  // 明天补班
-  if (tmrComp) {
-    $notification.post("⚠️ 明天要补班！","明天（"+tmrStr+"）是"+tmrComp+"假期的补班日","记得定好明天的闹钟 ⏰");
-  }
-
-  // 生日/纪念日前1-3天单独预警通知
-  birthdaysSoon.forEach(function(b){
-    if (b.diff<=WARN_DAYS) {
-      $notification.post("🎂 生日提醒", b.name+" 的生日还有 "+b.diff+" 天", b.solar ? "公历 "+b.solar : "");
-    }
-  });
-  annivSoon.forEach(function(a){
-    if (a.diff<=WARN_DAYS) {
-      $notification.post("💑 纪念日提醒", a.name+" 还有 "+a.diff+" 天", "");
-    }
-  });
-
   // 收集所有未来30天内的生日和纪念日，用于主通知显示
   var upcomingPersonal=[];
   birthdaysSoon.forEach(function(b){
@@ -279,20 +246,49 @@ function pushNotifications() {
   });
   upcomingPersonal.sort(function(a,b){return a.diff-b.diff;});
 
-  // 主通知
+  // 节假日前1-3天预警（单独一条，重要）
+  warnHols.forEach(function(h){
+    $notification.post("🔔 "+h.name+"还有"+h.daysUntil+"天",
+      h.startDate+" 起，放假 "+h.duration+" 天",
+      h.memo ? h.memo.slice(0,60)+"…" : "");
+  });
+
+  // 明天补班（单独一条，重要）
+  if (tmrComp) {
+    $notification.post("⚠️ 明天要补班！","明天（"+tmrStr+"）是"+tmrComp+"假期的补班日","记得定好明天的闹钟 ⏰");
+  }
+
+  // 主通知：汇总所有信息
   var mainLines=[];
+
+  // 今天是节日/生日/纪念日 → 放在主通知顶部
+  var celebLines=[];
+  festivalsToday.forEach(function(n){ celebLines.push((FESTIVAL_EMOJI[n]||"🎉")+" 今天是"+n+"，祝你节日快乐！"); });
+  birthdaysToday.forEach(function(n){ celebLines.push("🎂 今天是"+n+"的生日，记得送上祝福！"); });
+  annivToday.forEach(function(n){     celebLines.push("💑 今天是"+n+"，祝你们幸福美满！"); });
+  celebLines.forEach(function(l){ mainLines.push(l); });
+
+  // 补班标注
   if (todayComp) mainLines.push("⚠️ 今天是"+todayComp+"假期的补班日，加油！");
+
+  // 法定节假日倒计时
   upcoming.slice(0,3).forEach(function(h){
     if(h.daysUntil===0) mainLines.push("🎉 "+h.name+"：今天开始！放假 "+h.duration+" 天");
     else mainLines.push("📌 距"+h.name+"还有 "+h.daysUntil+" 天（放 "+h.duration+" 天）");
   });
+
+  // 传统节日7天内
   festivalsUpcoming.sort(function(a,b){return a.diff-b.diff;}).slice(0,2).forEach(function(f){
     mainLines.push("🏮 "+f.name+"还有 "+f.diff+" 天");
   });
-  // 最近生日/纪念日（最多显示2个）
-  upcomingPersonal.slice(0,2).forEach(function(p){
-    mainLines.push(p.emoji+" "+p.name+"还有 "+p.diff+" 天");
+
+  // 生日/纪念日前1-3天 → 主通知顶部单独一行提示
+  upcomingPersonal.filter(function(p){return p.diff<=WARN_DAYS;}).forEach(function(p){
+    mainLines.push(p.emoji+" "+p.name+"还有 "+p.diff+" 天 ⚠️");
   });
+  // 超过3天不在主通知显示，等到前3天才出现
+
+  // 黄历
   if (almanacText) mainLines.push("",almanacText);
 
   var subtitle = festivalsToday.length
