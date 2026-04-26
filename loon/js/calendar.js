@@ -57,6 +57,39 @@ var FESTIVAL_EMOJI = {
   春节:"🧧",除夕:"🧨",元宵节:"🏮",元旦:"🎊",中秋节:"🌕",端午节:"🐉",
   七夕:"💝",情人节:"💕","520":"💌",儿童节:"🎈",圣诞节:"🎄",冬至:"❄️",重阳节:"🍂",
   国庆节:"🇨🇳",劳动节:"👷",母亲节:"👩",父亲节:"👨",平安夜:"🎁",万圣节:"🎃",
+  龙抬头:"🐲",中元节:"👻",
+};
+
+// 节日习俗文案
+var FESTIVAL_CUSTOM = {
+  // 法定节假日
+  "元旦":    "新年快乐！辞旧迎新，万象更新 🎆",
+  "春节":    "新春快乐！阖家团圆，吃年夜饭放鞭炮 🧨",
+  "除夕":    "除夕快乐！一家人围坐吃年夜饭，守岁迎新年 🍽️",
+  "清明节":  "慎终追远，祭扫先祖，踏青赏春 🌿",
+  "劳动节":  "劳动最光荣！好好休息，犒劳自己 😊",
+  "端午节":  "端午安康！吃粽子、赛龙舟，纪念屈原 🍃",
+  "中秋节":  "中秋快乐！赏月吃月饼，阖家团圆 🥮",
+  "国庆节":  "祝祖国生日快乐！繁荣昌盛，国泰民安 🎆",
+  // 传统节日
+  "元宵节":  "元宵节快乐！吃汤圆赏花灯，团团圆圆 🍡",
+  "龙抬头":  "二月二龙抬头！理发迎好运，金龙送福来 💈",
+  "七夕":    "七夕快乐！牛郎织女鹊桥相会，愿天下有情人终成眷属 💕",
+  "中元节":  "中元节，思念故人，寄托哀思 🕯️",
+  "重阳节":  "重阳节快乐！登高赏菊，尊老敬老 🍂",
+  "冬至":    "冬至快乐！北方吃饺子，南方吃汤圆，冬至大如年 🥟",
+  // 公历节日
+  "情人节":  "情人节快乐！送一束玫瑰，陪伴是最长情的告白 🌹",
+  "妇女节":  "妇女节快乐！感谢生命中每一位了不起的女性 💐",
+  "愚人节":  "愚人节快乐！今天的玩笑要适度哦 😄",
+  "520":     "520快乐！我爱你，三个字说尽所有 💌",
+  "母亲节":  "母亲节快乐！感谢妈妈的付出，记得打个电话或回家陪她 👩",
+  "父亲节":  "父亲节快乐！感谢爸爸的默默守护，今天陪陪他 👨",
+  "儿童节":  "儿童节快乐！愿我们都保有一颗童心 🎈",
+  "教师节":  "教师节快乐！感谢恩师的辛勤培育 📚",
+  "万圣节":  "万圣节快乐！Trick or Treat 🎃",
+  "平安夜":  "平安夜快乐！愿岁月静好，平安喜乐 🎁",
+  "圣诞节":  "圣诞快乐！愿你收到最想要的礼物 🎄",
 };
 
 // ─── 农历算法（月首表法，精确覆盖2024-2030年）──────────────────────────────────
@@ -142,7 +175,7 @@ function daysDiff(a,b) { return Math.round((new Date(b)-new Date(a))/86400000); 
 
 function parseSolarList(input) {
   if (!input||!input.trim()) return [];
-  return input.split(/[,，]/).map(function(s){return s.trim();}).filter(Boolean).map(function(e){
+  return input.split(/[,，;；]/).map(function(s){return s.trim();}).filter(Boolean).map(function(e){
     var m=e.match(/^(.+?)[::：](\d{1,2})[-\/](\d{1,2})$/);
     return m ? {name:m[1].trim(), mmdd:pad(m[2])+"-"+pad(m[3])} : null;
   }).filter(Boolean);
@@ -157,7 +190,7 @@ var MONTH_MAP = {"正":1,"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7
 
 function parseLunarList(input) {
   if (!input||!input.trim()) return [];
-  return input.split(/[,，]/).map(function(s){return s.trim();}).filter(Boolean).map(function(e){
+  return input.split(/[,，;；]/).map(function(s){return s.trim();}).filter(Boolean).map(function(e){
     var m=e.match(/^(.+?)[::：](\d{1,2}|[正二三四五六七八九十冬腊]+月?)[-\/](\d{1,2}|[初廿一二三四五六七八九十]+)$/);
     if (!m) return null;
     var lm=parseInt(m[2]); if(isNaN(lm)) lm=MONTH_MAP[m[2].replace("月","")] || 1;
@@ -244,7 +277,7 @@ function pushNotifications() {
   parseSolarList(_solar_raw).forEach(function(b){
     var diff=solarDiff(T.full,T.year,b.mmdd);
     if(diff===0) birthdaysToday.push(b.name+"（公历）");
-    else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（公历）",diff:diff});
+    else if(diff>0&&diff<=SHOW_DAYS) birthdaysSoon.push({name:b.name+"（公历）",diff:diff,mmdd:b.mmdd});
   });
 
   // 农历生日
@@ -311,25 +344,54 @@ function pushNotifications() {
 
   // ── 通知3：生日/纪念日前1-3天 ─────────────────────────────────────────────
   upcomingPersonal.filter(function(p){return p.diff<=WARN_DAYS;}).forEach(function(p){
-    $notification.post(
-      p.emoji+" "+p.name.split("（")[0],
-      (p.emoji==="🎂" ? "生日" : "纪念日")+"还有 "+p.diff+" 天",
-      p.solar ? "公历 "+p.solar : ""
-    );
+    var pureName   = p.name.split("（")[0];
+    var isLunar    = p.name.indexOf("农历") > -1;
+    var isBirthday = p.emoji === "🎂";
+
+    if (isBirthday) {
+      // 倒计时文案
+      var countdownText;
+      if (p.diff === 1)      countdownText = "明天就是生日啦 🎉";
+      else if (p.diff === 2) countdownText = "后天生日，别忘了 😊";
+      else                   countdownText = "还有 "+p.diff+" 天就是生日";
+
+      var typeLabel = isLunar ? "农历生日" : "公历生日";
+      var dateLabel = p.solar ? p.solar.slice(5).replace("-","月")+"日" : "";
+      var subtitle  = countdownText + (dateLabel ? "（"+dateLabel+"）" : "");
+
+      $notification.post("🎂 "+pureName+"的生日快到了", subtitle, typeLabel);
+    } else {
+      // 纪念日
+      var annivDiff = p.diff;
+      var annivText;
+      if (annivDiff === 1)      annivText = "明天就是纪念日 💑";
+      else if (annivDiff === 2) annivText = "后天纪念日，记得准备 💝";
+      else                      annivText = "还有 "+annivDiff+" 天";
+      $notification.post("💑 "+pureName, annivText, "");
+    }
   });
 
   // ── 通知4：节日/生日/纪念日当天祝福 ──────────────────────────────────────
-  var celebLines=[];
-  festivalsToday.forEach(function(n){ celebLines.push((FESTIVAL_EMOJI[n]||"🎉")+" "+n+"快乐！"); });
-  birthdaysToday.forEach(function(n){ celebLines.push("🎂 "+n.split("（")[0]+" 生日快乐！"); });
-  annivToday.forEach(function(n){     celebLines.push("💑 "+n+" 纪念日快乐！"); });
-  if (celebLines.length > 0) {
+  // 节日祝福：每个节日单独一条，加入习俗文案
+  festivalsToday.forEach(function(n){
+    var emoji   = FESTIVAL_EMOJI[n] || "🎉";
+    var custom  = FESTIVAL_CUSTOM[n] || (n+"快乐！");
+    $notification.post(emoji+" "+n, custom, "");
+  });
+  // 生日当天：每人单独一条
+  birthdaysToday.forEach(function(n){
+    var pureName = n.split("（")[0];
+    var isLunar  = n.indexOf("农历") > -1;
     $notification.post(
-      "🎉 " + (festivalsToday.length ? festivalsToday[0] : (birthdaysToday.length ? "生日提醒" : "纪念日")),
-      celebLines[0],
-      celebLines.slice(1).join(" | ")
+      "🎂 生日快乐！",
+      pureName+" 今天生日，记得送上祝福 🎁",
+      isLunar ? "农历生日" : "公历生日"
     );
-  }
+  });
+  // 纪念日当天：每个单独一条
+  annivToday.forEach(function(n){
+    $notification.post("💑 纪念日快乐！", n+" · 今天是你们的纪念日", "祝你们幸福美满 ❤️");
+  });
 
   // ── 通知5：主通知（节假日倒计时）─────────────────────────────────────────
   // 标题固定，副标题放最近节日，正文放3个节假日倒计时
@@ -342,7 +404,9 @@ function pushNotifications() {
   // 传统节日7天内（最多1个，省空间）
   festivalsUpcoming.sort(function(a,b){return a.diff-b.diff;});
   if (festivalsUpcoming.length > 0) {
-    mainLines.push("🏮 "+festivalsUpcoming[0].name+" 还有"+festivalsUpcoming[0].diff+"天");
+    var f0 = festivalsUpcoming[0];
+    var emoji0 = FESTIVAL_EMOJI[f0.name] || "🏮";
+    mainLines.push(emoji0+" "+f0.name+" 还有"+f0.diff+"天");
   }
 
   var mainSubtitle = T.full;
