@@ -3,6 +3,12 @@
  * 兼容 Loon JS 引擎（无 async/await，纯回调链）
  */
 
+// ─── 运行模式 ────────────────────────────────────────────────────────────────
+// main    = 08:00 主推送（节假日倒计时+生日+节日祝福+节假日预警）
+// almanac = 08:15 黄历推送（仅周末和节假日前后）
+// comp    = 20:00 补班日提醒（仅明天是补班日时推送）
+var RUN_MODE = $argument || $persistentStore.read("calendar_mode") || "main";
+
 // ─── 数据源 ──────────────────────────────────────────────────────────────────
 var HOLIDAY_API     = "https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json";
 var HOLIDAY_API_CDN = "https://cdn.jsdelivr.net/gh/lanceliao/china-holiday-calender/holidayAPI.json";
@@ -277,56 +283,75 @@ function pushNotifications() {
   });
   upcomingPersonal.sort(function(a,b){return a.diff-b.diff;});
 
-  // 节假日前1-3天预警（单独一条，重要）
+  // ── 通知1：节假日前1-3天预警 ─────────────────────────────────────────────
+  // 标题：节假日名+天数  副标题：放假信息  正文：补班日（简洁，不重复节假日名）
   warnHols.forEach(function(h){
-    $notification.post("🔔 "+h.name+"还有"+h.daysUntil+"天",
-      h.startDate+" 起，放假 "+h.duration+" 天",
-      h.memo ? h.memo.slice(0,60)+"…" : "");
+    // 从 compDays 里找属于该节假日的补班日
+    var compList = [];
+    Object.keys(compDays).forEach(function(cd){
+      if (compDays[cd] === h.name) compList.push(cd.slice(5)); // 只取月-日
+    });
+    var compStr = compList.length ? "补班日："+compList.join("、") : "";
+    $notification.post(
+      "🔔 "+h.name+"还有 "+h.daysUntil+" 天",
+      h.startDate.slice(5).replace("-","月")+"日起 放假 "+h.duration+" 天",
+      compStr
+    );
   });
 
-  // 明天补班（单独一条，重要）
-  if (tmrComp) {
-    $notification.post("⚠️ 明天要补班！","明天（"+tmrStr+"）是"+tmrComp+"假期的补班日","记得定好明天的闹钟 ⏰");
+  // ── 通知2：今天补班标注（仅今天是补班日时推送，明天补班由20:00单独通知）──
+  // 今天是补班日 → 早上主推送里提醒一次
+  if (todayComp) {
+    $notification.post(
+      "⚠️ 今天补班",
+      T.full.slice(5).replace("-","月")+"日（"+todayComp+"假期补班）",
+      "加油！周末见 💪"
+    );
   }
 
-  // 主通知：汇总所有信息
-  var mainLines=[];
-
-  // 今天是节日/生日/纪念日 → 放在主通知顶部
-  var celebLines=[];
-  festivalsToday.forEach(function(n){ celebLines.push((FESTIVAL_EMOJI[n]||"🎉")+" 今天是"+n+"，祝你节日快乐！"); });
-  birthdaysToday.forEach(function(n){ celebLines.push("🎂 今天是"+n+"的生日，记得送上祝福！"); });
-  annivToday.forEach(function(n){     celebLines.push("💑 今天是"+n+"，祝你们幸福美满！"); });
-  celebLines.forEach(function(l){ mainLines.push(l); });
-
-  // 补班标注
-  if (todayComp) mainLines.push("⚠️ 今天是"+todayComp+"假期的补班日，加油！");
-
-  // 法定节假日倒计时
-  upcoming.slice(0,3).forEach(function(h){
-    if(h.daysUntil===0) mainLines.push("🎉 "+h.name+"：今天开始！放假 "+h.duration+" 天");
-    else mainLines.push("📌 距"+h.name+"还有 "+h.daysUntil+" 天（放 "+h.duration+" 天）");
-  });
-
-  // 传统节日7天内
-  festivalsUpcoming.sort(function(a,b){return a.diff-b.diff;}).slice(0,2).forEach(function(f){
-    mainLines.push("🏮 "+f.name+"还有 "+f.diff+" 天");
-  });
-
-  // 生日/纪念日前1-3天 → 主通知顶部单独一行提示
+  // ── 通知3：生日/纪念日前1-3天 ─────────────────────────────────────────────
   upcomingPersonal.filter(function(p){return p.diff<=WARN_DAYS;}).forEach(function(p){
-    mainLines.push(p.emoji+" "+p.name+"还有 "+p.diff+" 天 ⚠️");
+    $notification.post(
+      p.emoji+" "+p.name.split("（")[0],
+      (p.emoji==="🎂" ? "生日" : "纪念日")+"还有 "+p.diff+" 天",
+      p.solar ? "公历 "+p.solar : ""
+    );
   });
-  // 超过3天不在主通知显示，等到前3天才出现
 
-  // 黄历
-  if (almanacText) mainLines.push("",almanacText);
+  // ── 通知4：节日/生日/纪念日当天祝福 ──────────────────────────────────────
+  var celebLines=[];
+  festivalsToday.forEach(function(n){ celebLines.push((FESTIVAL_EMOJI[n]||"🎉")+" "+n+"快乐！"); });
+  birthdaysToday.forEach(function(n){ celebLines.push("🎂 "+n.split("（")[0]+" 生日快乐！"); });
+  annivToday.forEach(function(n){     celebLines.push("💑 "+n+" 纪念日快乐！"); });
+  if (celebLines.length > 0) {
+    $notification.post(
+      "🎉 " + (festivalsToday.length ? festivalsToday[0] : (birthdaysToday.length ? "生日提醒" : "纪念日")),
+      celebLines[0],
+      celebLines.slice(1).join(" | ")
+    );
+  }
 
-  var subtitle = festivalsToday.length
-    ? festivalsToday.map(function(n){return (FESTIVAL_EMOJI[n]||"🎊")+n;}).join(" ")
-    : T.full;
+  // ── 通知5：主通知（节假日倒计时）─────────────────────────────────────────
+  // 标题固定，副标题放最近节日，正文放3个节假日倒计时
+  var mainLines=[];
+  if (todayComp) mainLines.push("⚠️ 今天"+todayComp+"补班");
+  upcoming.slice(0,3).forEach(function(h){
+    if(h.daysUntil===0) mainLines.push("🎉 "+h.name+" 今天开始放假！共"+h.duration+"天");
+    else mainLines.push("📌 "+h.name+" 还有"+h.daysUntil+"天（放"+h.duration+"天）");
+  });
+  // 传统节日7天内（最多1个，省空间）
+  festivalsUpcoming.sort(function(a,b){return a.diff-b.diff;});
+  if (festivalsUpcoming.length > 0) {
+    mainLines.push("🏮 "+festivalsUpcoming[0].name+" 还有"+festivalsUpcoming[0].diff+"天");
+  }
 
-  $notification.post("📅 日历助手", subtitle, mainLines.join("\n")||"今日无特别事项");
+  var mainSubtitle = T.full;
+  if (festivalsToday.length)    mainSubtitle = festivalsToday.map(function(n){return (FESTIVAL_EMOJI[n]||"🎊")+n;}).join(" ");
+  else if (upcoming.length > 0) mainSubtitle = "距"+upcoming[0].name+"还有"+upcoming[0].daysUntil+"天";
+
+  $notification.post("📅 日历助手", mainSubtitle, mainLines.join("\n")||"今日无特别事项");
+
+  // 黄历已移至 08:15 almanac 模式独立推送，主推送不再包含
   $done({});
 }
 
@@ -368,4 +393,101 @@ function fetchHolidayThenAlmanac(url, isCDN) {
   });
 }
 
-fetchHolidayThenAlmanac(HOLIDAY_API, false);
+// ─── 补班日提醒（20:00 独立运行）────────────────────────────────────────────
+function runCompCheck() {
+  // 只检查明天是否是补班日，是则推送，否则静默退出
+  $httpClient.get({url:HOLIDAY_API_CDN, timeout:10000, headers:{"user-agent":MOBILE_UA}}, function(err,r,data){
+    var compDays = {};
+    if (!err && data) {
+      try {
+        var j = JSON.parse(data);
+        var years = [String(T.year), String(T.year+1)];
+        years.forEach(function(yk){
+          (j.Years[yk]||[]).forEach(function(h){
+            (h.CompDays||[]).forEach(function(cd){ compDays[cd]=h.Name; });
+          });
+        });
+      } catch(e){ console.log("[补班] 解析失败:"+e); }
+    }
+    var tmrStr = new Date(Date.now()+8*3600000+86400000).toISOString().slice(0,10);
+    var tmrComp = compDays[tmrStr];
+    if (tmrComp) {
+      var dateLabel = tmrStr.slice(5).replace("-","月")+"日";
+      $notification.post(
+        "⚠️ 明天补班",
+        dateLabel+"（"+tmrComp+"假期补班）",
+        "记得定好明天的闹钟 ⏰"
+      );
+    } else {
+      console.log("[补班] 明天不补班，静默退出");
+    }
+    $done({});
+  });
+}
+
+// ─── 黄历推送（08:15 独立运行，仅周末和节假日前后）─────────────────────────
+function runAlmanac() {
+  var dayOfWeek = new Date(T.full).getDay(); // 0=周日 6=周六
+  var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+  // 判断是否节假日前后3天内（需要节假日数据）
+  $httpClient.get({url:HOLIDAY_API_CDN, timeout:10000, headers:{"user-agent":MOBILE_UA}}, function(err,r,data){
+    var nearHoliday = false;
+    if (!err && data) {
+      try {
+        var j = JSON.parse(data);
+        var years = [String(T.year), String(T.year+1)];
+        years.forEach(function(yk){
+          (j.Years[yk]||[]).forEach(function(h){
+            var startDiff = daysDiff(T.full, h.StartDate);
+            var endDiff   = daysDiff(T.full, h.EndDate);
+            // 节假日前3天或节假日期间（endDiff>=0 表示假期还没结束）
+            if ((startDiff >= 0 && startDiff <= 3) || (startDiff < 0 && endDiff >= 0)) {
+              nearHoliday = true;
+            }
+          });
+        });
+      } catch(e){}
+    }
+
+    if (!isWeekend && !nearHoliday) {
+      console.log("[黄历] 普通工作日，跳过推送");
+      $done({});
+      return;
+    }
+
+    // 拉黄历数据并推送
+    var url = ALMANAC_BASE+T.year+"/"+T.year+T.month+".json";
+    $httpClient.get({url:url, timeout:8000, headers:{"user-agent":MOBILE_UA}}, function(err2,r2,data2){
+      if (!err2 && data2) {
+        try {
+          var json = JSON.parse(data2);
+          var list = (json.data&&json.data[0]&&json.data[0].almanac)||[];
+          for (var i=0;i<list.length;i++) {
+            var item = list[i];
+            if (item.year===String(T.year)&&item.month===String(parseInt(T.month))&&item.day===String(parseInt(T.day))) {
+              var gzDay  = item.gzDay || item.gz_day || item.gzRi || "";
+              var gzStr  = item.gzYear+"年"+item.gzMonth+"月"+(gzDay?gzDay+"日":"");
+              var nlDate = "农历"+item.lMonth+"月"+item.lDate+" · "+gzStr;
+              var suit   = (item.suit  || "-");
+              var avoid  = (item.avoid || "-");
+              $notification.post("📖 今日黄历", nlDate, "✅宜："+suit+"\n🈲忌："+avoid);
+              break;
+            }
+          }
+        } catch(e){ console.log("[黄历] 解析失败:"+e); }
+      }
+      $done({});
+    });
+  });
+}
+
+// ─── 入口：根据 RUN_MODE 分流 ────────────────────────────────────────────────
+if (RUN_MODE === "comp") {
+  runCompCheck();
+} else if (RUN_MODE === "almanac") {
+  runAlmanac();
+} else {
+  // main 模式：主推送（节假日+生日+节日祝福+节假日预警，不含黄历和补班）
+  fetchHolidayThenAlmanac(HOLIDAY_API, false);
+}
