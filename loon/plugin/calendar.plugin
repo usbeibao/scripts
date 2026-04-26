@@ -1,11 +1,18 @@
 #!name = 📅 日历助手 Pro
-#!desc = 每日推送：法定节假日倒计时 + 补班提醒 + 今日黄历 + 传统节日 + 生日/纪念日提醒。支持公历和农历生日分别添加。
+#!desc = 每日推送：节假日倒计时 + 补班提醒 + 黄历（周末/节假日前后）+ 传统节日 + 生日/纪念日。支持公历和农历生日分别添加。
 #!author = sift
-#!homepage = https://github.com/YOUR_USERNAME/loon-calendar
+#!homepage = https://github.com/usbeibao/scripts
 #!icon = https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/synology-calendar.png
-#!input = 公历生日, 格式：姓名:月-日，逗号分隔。如：女儿:3-15,老婆:8-22,朋友:12-1
-#!input = 农历生日, 格式：姓名:月-日，逗号分隔（系统自动换算）。如：妈妈:1-15,爸爸:6-初一,奶奶:8-15
-#!input = 纪念日提醒, 格式：名称:月-日（公历），逗号分隔。如：结婚纪念日:9-18,恋爱纪念日:2-14
+#!input = 公历生日, 格式：姓名:月-日，逗号分隔。如：女儿:3-15,老婆:8-22
+#!input = 农历生日, 格式：姓名:月-日，逗号分隔（系统自动换算）。如：妈妈:1-15,爸爸:6-初一
+#!input = 纪念日提醒, 格式：名称:月-日（公历），逗号分隔。如：结婚纪念日:9-18
 
 [Script]
-cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历助手
+# 08:00 主推送：节假日倒计时 + 生日纪念日 + 节日祝福 + 节假日预警 + 补班当天提醒
+cron "0 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-主推送, argument=main
+
+# 08:15 黄历推送：仅周末和节假日前后推送
+cron "15 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-黄历, argument=almanac
+
+# 20:00 补班提醒：仅明天是补班日时推送
+cron "0 20 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-补班提醒, argument=comp
