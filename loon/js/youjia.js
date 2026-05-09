@@ -33,12 +33,17 @@ function fmtDate(str) {
 function isFutureDate(str) {
   if (!str) return false;
   var m = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return false;
+  if (!m) {
+    console.log("[isFutureDate] 无法匹配日期: " + str);
+    return false;
+  }
   var bj = new Date(Date.now() + 8 * 3600 * 1000);
   var todayStr = bj.getUTCFullYear() + "-"
     + String(bj.getUTCMonth()+1).padStart(2,"0") + "-"
     + String(bj.getUTCDate()).padStart(2,"0");
-  return (m[1]+"-"+m[2]+"-"+m[3]) > todayStr;
+  var dateStr = m[1]+"-"+m[2]+"-"+m[3];
+  console.log("[isFutureDate] dateStr=" + dateStr + " todayStr=" + todayStr + " result=" + (dateStr > todayStr));
+  return dateStr > todayStr;
 }
 
 $httpClient.get({
