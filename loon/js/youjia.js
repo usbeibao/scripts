@@ -155,7 +155,7 @@ $httpClient.get({
       if (json.status === 1 && json.data) {
         prices = json.data;
         if (json.data.next_update_time && isFutureDate(json.data.next_update_time)) nextFromAPI = fmtDate(json.data.next_update_time);
-        if (json.data.update_time && isPastOrToday(json.data.update_time)) lastFromAPI = fmtDate(json.data.update_time);
+        // iamwawa 的 update_time 是数据采集时间，不是调价日期，不使用
         console.log("[iamwawa] p92=" + json.data.p92 + " next=" + nextFromAPI);
       }
     } catch(e) {
