@@ -53,6 +53,29 @@ function fmtDate(str) {
   return parseInt(m[2]) + "月" + parseInt(m[3]) + "日";
 }
 
+function getTodayStr() {
+  var bj = new Date(Date.now() + 8 * 3600 * 1000);
+  return bj.getUTCFullYear() + "-"
+    + String(bj.getUTCMonth()+1).padStart(2,"0") + "-"
+    + String(bj.getUTCDate()).padStart(2,"0");
+}
+
+function isFutureDate(str) {
+  // 是否是今天或未来（用于校验下次调价日）
+  if (!str) return false;
+  var m = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return false;
+  return (m[1]+"-"+m[2]+"-"+m[3]) > getTodayStr();
+}
+
+function isPastOrToday(str) {
+  // 是否是过去或今天（用于校验上次调价日）
+  if (!str) return false;
+  var m = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return false;
+  return (m[1]+"-"+m[2]+"-"+m[3]) <= getTodayStr();
+}
+
 function parseBear(html, prices, lastFromAPI, nextFromAPI) {
   var lastDate = lastFromAPI || "";
   var nextDate = nextFromAPI || "";
@@ -62,20 +85,29 @@ function parseBear(html, prices, lastFromAPI, nextFromAPI) {
     // 上次调价
     if (!lastDate) {
       var mLast = html.match(/上次调价[\s\S]{0,20}?([\d]{4}-[\d]{2}-[\d]{2})/);
-      if (mLast) lastDate = fmtDate(mLast[1]);
+      if (mLast && isPastOrToday(mLast[1])) lastDate = fmtDate(mLast[1]);
     }
     // 下次调价
     if (!nextDate) {
       var mNext = html.match(/下次调价[\s\S]{0,20}?([\d]{4}-[\d]{2}-[\d]{2})/);
-      if (mNext) nextDate = fmtDate(mNext[1]);
+      if (mNext && isFutureDate(mNext[1])) nextDate = fmtDate(mNext[1]);
     }
-    // 趋势
-    if (html.indexOf("下调") > -1 || html.indexOf("下跌") > -1) trend = "📉";
-    else if (html.indexOf("上涨") > -1 || html.indexOf("上调") > -1) trend = "📈";
-    else if (html.indexOf("搁浅") > -1 || html.indexOf("不变") > -1) trend = "➡️";
-    // 幅度
-    var mAmp = html.match(/([\d.]+(?:[-~][\d.]+)?)\s*元\s*[\/／]\s*[升L]/);
-    if (mAmp) amplitude = mAmp[1] + "元/L";
+    // 趋势 + 幅度：只在"下次调价"附近区域（300字内）查找，避免误匹配历史数据
+    var nextSection = "";
+    var nextIdx = html.indexOf("下次调价");
+    if (nextIdx > -1) {
+      nextSection = html.substring(nextIdx, nextIdx + 300);
+    }
+    if (nextSection) {
+      // 趋势（只在该区域）
+      if (nextSection.indexOf("下调") > -1 || nextSection.indexOf("下跌") > -1) trend = "📉";
+      else if (nextSection.indexOf("上涨") > -1 || nextSection.indexOf("上调") > -1) trend = "📈";
+      else if (nextSection.indexOf("搁浅") > -1 || nextSection.indexOf("不变") > -1) trend = "➡️";
+
+      // 幅度（只在该区域，且必须紧跟趋势词）
+      var mAmp = nextSection.match(/(?:下调|下跌|上涨|上调)[\s\S]{0,30}?([\d.]+(?:[-~][\d.]+)?)\s*元\s*[\/／]\s*升/);
+      if (mAmp) amplitude = mAmp[1] + "元/L";
+    }
   } catch(e) {
     console.log("[小熊] 解析失败: " + e);
   }
@@ -89,6 +121,8 @@ function notify(prices, lastDate, nextDate, trend, amplitude) {
   var p98 = prices.p98 || "-";
   var p0  = prices.p0  || "-";
 
+  // 一致性校验：如果 last 和 next 都有但顺序矛盾，丢弃可疑的那个
+  // (last/next 是 "5月9日" 这种格式，需要还原比较)
   var adjustInfo = "";
   if (lastDate && nextDate) adjustInfo = "上次 " + lastDate + "  下次 " + nextDate;
   else if (nextDate)        adjustInfo = "下次调价 " + nextDate;
@@ -120,8 +154,8 @@ $httpClient.get({
       console.log("[iamwawa] status=" + json.status);
       if (json.status === 1 && json.data) {
         prices = json.data;
-        if (json.data.next_update_time) nextFromAPI = fmtDate(json.data.next_update_time);
-        if (json.data.update_time)      lastFromAPI = fmtDate(json.data.update_time);
+        if (json.data.next_update_time && isFutureDate(json.data.next_update_time)) nextFromAPI = fmtDate(json.data.next_update_time);
+        if (json.data.update_time && isPastOrToday(json.data.update_time)) lastFromAPI = fmtDate(json.data.update_time);
         console.log("[iamwawa] p92=" + json.data.p92 + " next=" + nextFromAPI);
       }
     } catch(e) {
