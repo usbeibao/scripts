@@ -546,11 +546,25 @@ function runAlmanac() {
   });
 }
 
+// ─── GV 保号提醒 ─────────────────────────────────────────────────────────────
+function runGVReminder() {
+  var hour = new Date(Date.now() + 8 * 3600 * 1000).getUTCHours();
+  var timeLabel = hour < 12 ? "上午提醒" : "晚间提醒";
+  $notification.post(
+    "📱 Google Voice 保号",
+    "本月保号" + timeLabel + "，记得发一条短信",
+    "每月至少操作一次，避免号码被回收 ⚠️"
+  );
+  $done({});
+}
+
 // ─── 入口：根据 RUN_MODE 分流 ────────────────────────────────────────────────
 if (RUN_MODE === "comp") {
   runCompCheck();
 } else if (RUN_MODE === "almanac") {
   runAlmanac();
+} else if (RUN_MODE === "gv") {
+  runGVReminder();
 } else {
   // main 模式：主推送（节假日+生日+节日祝福+节假日预警，不含黄历和补班）
   fetchHolidayThenAlmanac(HOLIDAY_API, false);
