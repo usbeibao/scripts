@@ -16,3 +16,9 @@ cron "15 8 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts
 
 # 20:00 补班提醒：仅明天是补班日时推送
 cron "0 20 * * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-补班提醒, argument=comp
+
+# 每月15日 10:00 GV保号上午提醒
+cron "0 10 15 * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-GV保号上午, argument=gv
+
+# 每月15日 22:00 GV保号晚间提醒
+cron "0 22 15 * *" script-path=https://raw.githubusercontent.com/usbeibao/scripts/main/loon/js/calendar.js, tag=日历-GV保号晚间, argument=gv
