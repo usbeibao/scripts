@@ -20,20 +20,20 @@ checkRoot() {
 
 apt_source() {
   cat > /etc/apt/sources.list<<-EOF
-deb http://deb.debian.org/debian bookworm main non-free-firmware
-deb-src http://deb.debian.org/debian bookworm main non-free-firmware
+deb http://deb.debian.org/debian trixie main non-free-firmware
+deb-src http://deb.debian.org/debian trixie main non-free-firmware
 
-deb http://deb.debian.org/debian-security/ bookworm-security main non-free-firmware
-deb-src http://deb.debian.org/debian-security/ bookworm-security main non-free-firmware
+deb http://deb.debian.org/debian-security/ trixie-security main non-free-firmware
+deb-src http://deb.debian.org/debian-security/ trixie-security main non-free-firmware
 
-deb http://deb.debian.org/debian/ bookworm-updates main non-free-firmware
-deb-src http://deb.debian.org/debian/ bookworm-updates main non-free-firmware
+deb http://deb.debian.org/debian/ trixie-updates main non-free-firmware
+deb-src http://deb.debian.org/debian/ trixie-updates main non-free-firmware
 
-deb http://deb.debian.org/debian/ bookworm-backports main non-free-firmware
-deb-src http://deb.debian.org/debian/ bookworm-backports main non-free-firmware
+deb http://deb.debian.org/debian/ trixie-backports main non-free-firmware
+deb-src http://deb.debian.org/debian/ trixie-backports main non-free-firmware
 EOF
   apt update -y && apt upgrade -y
-  apt install curl wget git less screen xz-utils net-tools dnsutils mtr unzip iperf3 jq nethogs iftop lsof sudo certbot python3-certbot-nginx -y
+  apt install curl wget git less screen xz-utils bind9-dnsutils plocate net-tools mtr unzip iperf3 jq nethogs iftop lsof sudo certbot python3-certbot-nginx -y
   coloredEcho $GREEN " 初始化完成"
 }
 
