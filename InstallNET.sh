@@ -359,6 +359,8 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '10' ]] && DIST='buster';
         [[ "$isDigital" == '11' ]] && DIST='bullseye';
         [[ "$isDigital" == '12' ]] && DIST='bookworm';
+        [[ "$isDigital" == '13' ]] && DIST='trixie';
+        [[ "$isDigital" == '14' ]] && DIST='forky';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
@@ -375,7 +377,12 @@ if [[ -n "$tmpDIST" ]]; then
         [[ "$isDigital" == '16.04' ]] && DIST='xenial';
         [[ "$isDigital" == '18.04' ]] && DIST='bionic';
         [[ "$isDigital" == '20.04' ]] && DIST='focal';
-        # [[ "$isDigital" == '22.04' ]] && DIST='jammy';
+        # 注意: Ubuntu 22.04(jammy)起官方取消传统 netboot installer,
+        #       这些版本通常无 netboot initrd 可下载(会 404)。Debian 不受影响。
+        #       若需装新版 Ubuntu, 建议用 DD 镜像模式 (-dd) 或换支持的镜像源。
+        [[ "$isDigital" == '22.04' ]] && DIST='jammy';
+        [[ "$isDigital" == '24.04' ]] && DIST='noble';
+        [[ "$isDigital" == '26.04' ]] && DIST='resolute';
       }
     }
     LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
