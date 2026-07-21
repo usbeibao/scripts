@@ -95,71 +95,83 @@ var FESTIVAL_CUSTOM = {
 // ─── 农历算法（月首表法，精确覆盖2024-2030年）──────────────────────────────────
 // 每行：[农历年, 农历月, 是否闰月, 该月初一对应的公历年月日]
 // 数据来源：紫金山天文台
-var LUNAR_MONTH_TABLE = [
-  [2024,1,0,2024,2,10],[2024,2,0,2024,3,11],[2024,3,0,2024,4,9],
-  [2024,4,0,2024,5,8],[2024,4,1,2024,6,6],[2024,5,0,2024,7,6],
-  [2024,6,0,2024,8,4],[2024,7,0,2024,9,3],[2024,8,0,2024,10,3],
-  [2024,9,0,2024,11,1],[2024,10,0,2024,12,1],[2024,11,0,2024,12,31],
-  [2024,12,0,2025,1,29],
-  [2025,1,0,2025,1,29],[2025,2,0,2025,2,28],[2025,3,0,2025,3,29],
-  [2025,4,0,2025,4,27],[2025,5,0,2025,5,27],[2025,6,0,2025,6,25],
-  [2025,7,0,2025,7,25],[2025,8,0,2025,8,23],[2025,9,0,2025,9,22],
-  [2025,10,0,2025,10,21],[2025,11,0,2025,11,20],[2025,12,0,2025,12,20],
-  [2026,1,0,2026,2,17],[2026,2,0,2026,3,19],[2026,3,0,2026,4,17],
-  [2026,4,0,2026,5,17],[2026,5,0,2026,6,15],[2026,6,0,2026,7,14],
-  [2026,7,0,2026,8,13],[2026,8,0,2026,9,11],[2026,9,0,2026,10,10],
-  [2026,10,0,2026,11,9],[2026,11,0,2026,12,9],[2026,12,0,2027,1,8],
-  [2027,1,0,2027,2,6],[2027,2,0,2027,3,8],[2027,3,0,2027,4,6],
-  [2027,4,0,2027,5,6],[2027,5,0,2027,6,4],[2027,6,0,2027,7,4],
-  [2027,6,1,2027,8,2],[2027,7,0,2027,9,1],[2027,8,0,2027,9,30],
-  [2027,9,0,2027,10,30],[2027,10,0,2027,11,28],[2027,11,0,2027,12,28],
-  [2027,12,0,2028,1,26],
-  [2028,1,0,2028,1,26],[2028,2,0,2028,2,25],[2028,3,0,2028,3,25],
-  [2028,4,0,2028,4,24],[2028,5,0,2028,5,23],[2028,6,0,2028,6,22],
-  [2028,7,0,2028,7,21],[2028,8,0,2028,8,20],[2028,9,0,2028,9,18],
-  [2028,10,0,2028,10,18],[2028,11,0,2028,11,16],[2028,12,0,2028,12,16],
-  [2029,1,0,2029,1,14],[2029,2,0,2029,2,13],[2029,3,0,2029,3,14],
-  [2029,4,0,2029,4,13],[2029,5,0,2029,5,12],[2029,6,0,2029,6,11],
-  [2029,7,0,2029,7,10],[2029,8,0,2029,8,9],[2029,9,0,2029,9,7],
-  [2029,9,1,2029,10,7],[2029,10,0,2029,11,5],[2029,11,0,2029,12,5],
-  [2029,12,0,2030,1,3],
-  [2030,1,0,2030,1,3],[2030,2,0,2030,2,2],[2030,3,0,2030,3,4],
-  [2030,4,0,2030,4,2],[2030,5,0,2030,5,2],[2030,6,0,2030,5,31],
-  [2030,7,0,2030,6,30],[2030,8,0,2030,7,29],[2030,9,0,2030,8,28],
-  [2030,10,0,2030,9,26],[2030,11,0,2030,10,26],[2030,12,0,2030,11,24],
+// ─── 农历算法（经典 lunarInfo 表，1900-2100 权威数据，精确无误差）──────────
+var lunarInfo = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,
+  0x0a2e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,
+  0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,
+  0x0d520,
 ];
 
-function dateToMs(y, m, d) {
-  return new Date(y, m-1, d).getTime();
+function lYearDays(y) {
+  var sum = 348, i = 0x8000;
+  for (; i > 0x8; i >>= 1) { if (lunarInfo[y-1900] & i) sum += 1; }
+  return sum + leapDays(y);
+}
+function leapMonth(y) { return lunarInfo[y-1900] & 0xf; }
+function leapDays(y) {
+  if (leapMonth(y)) return (lunarInfo[y-1900] & 0x10000) ? 30 : 29;
+  return 0;
+}
+function monthDays(y, m) {
+  return (lunarInfo[y-1900] & (0x10000 >> m)) ? 30 : 29;
 }
 
-// 公历转农历
+// 公历转农历：返回 {year, month, day, isLeap}
 function solarToLunar(sy, sm, sd) {
-  var ms = dateToMs(sy, sm, sd);
-  var result = {year:sy, month:1, day:1};
-  for (var i = LUNAR_MONTH_TABLE.length-1; i >= 0; i--) {
-    var row = LUNAR_MONTH_TABLE[i];
-    var rowMs = dateToMs(row[3], row[4], row[5]);
-    if (ms >= rowMs) {
-      var diff = Math.round((ms - rowMs) / 86400000);
-      result = {year:row[0], month:row[1], day:diff+1, isLeap:row[2]===1};
-      break;
-    }
+  var baseDate = new Date(1900, 0, 31);
+  var objDate = new Date(sy, sm-1, sd);
+  var offset = Math.round((objDate - baseDate) / 86400000);
+  var temp = 0, y = 1900;
+  for (; y < 2100 && offset > 0; y++) {
+    temp = lYearDays(y);
+    if (offset < temp) break;
+    offset -= temp;
   }
-  return result;
+  var leap = leapMonth(y), isLeap = false, m = 1;
+  for (; m < 13 && offset > 0; m++) {
+    if (leap > 0 && m === (leap+1) && !isLeap) {
+      m--; isLeap = true; temp = leapDays(y);
+    } else {
+      temp = monthDays(y, m);
+    }
+    if (isLeap && m === (leap+1)) isLeap = false;
+    if (offset < temp) break;
+    offset -= temp;
+  }
+  return {year:y, month:m, day:offset+1, isLeap:isLeap};
 }
 
-// 农历转公历（给定农历年月日，返回公历日期字符串）
+// 农历转公历：给定农历年月日，返回公历日期字符串 YYYY-MM-DD
 function lunarToSolar(ly, lm, ld) {
-  for (var i = 0; i < LUNAR_MONTH_TABLE.length; i++) {
-    var row = LUNAR_MONTH_TABLE[i];
-    if (row[0]===ly && row[1]===lm && row[2]===0) {
-      var base = dateToMs(row[3], row[4], row[5]);
-      var result = new Date(base + (ld-1)*86400000);
-      return result.getFullYear()+"-"+pad(result.getMonth()+1)+"-"+pad(result.getDate());
-    }
+  var baseDate = new Date(1900, 0, 31);
+  var offset = 0;
+  for (var y = 1900; y < ly; y++) offset += lYearDays(y);
+  var leap = leapMonth(ly);
+  for (var m = 1; m < lm; m++) {
+    offset += monthDays(ly, m);
+    if (m === leap) offset += leapDays(ly);
   }
-  return null;
+  offset += (ld - 1);
+  var result = new Date(baseDate.getTime() + offset * 86400000);
+  return result.getFullYear()+"-"+pad(result.getMonth()+1)+"-"+pad(result.getDate());
 }
 
 // ─── 工具 ────────────────────────────────────────────────────────────────────
