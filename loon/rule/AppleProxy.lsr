@@ -1,0 +1,6 @@
+# Apple WLOC 定位服务
+# 必须 DIRECT，走代理会导致 http-response 脚本读不到完整 body
+# https://github.com/Yu9191/wloc
+
+DOMAIN,gs-loc.apple.com
+DOMAIN,gs-loc-cn.apple.com
