@@ -10,9 +10,15 @@
 var RUN_MODE = $argument || $persistentStore.read("calendar_mode") || "main";
 
 // ─── 数据源 ──────────────────────────────────────────────────────────────────
-var HOLIDAY_API     = "https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json";
+// CDN 优先，失败回退 raw（raw.githubusercontent 在国内/日本经常超时）
 var HOLIDAY_API_CDN = "https://cdn.jsdelivr.net/gh/lanceliao/china-holiday-calender/holidayAPI.json";
-var ALMANAC_BASE    = "https://raw.githubusercontent.com/zqzess/openApiData/main/calendar/";
+var HOLIDAY_API_RAW = "https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json";
+// 黄历数据源（按顺序尝试，jsDelivr CDN 在国内/日本比 raw.githubusercontent 稳定得多）
+var ALMANAC_SOURCES = [
+  "https://cdn.jsdelivr.net/gh/zqzess/openApiData@main/calendar/",
+  "https://fastly.jsdelivr.net/gh/zqzess/openApiData@main/calendar/",
+  "https://raw.githubusercontent.com/zqzess/openApiData/main/calendar/",
+];
 var WARN_DAYS       = 3;
 var MOBILE_UA       = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15";
 
@@ -22,42 +28,55 @@ var SOLAR_FESTIVALS = [
   {name:"520",date:"05-20"},{name:"儿童节",date:"06-01"},
   {name:"建党节",date:"07-01"},{name:"建军节",date:"08-01"},
   {name:"教师节",date:"09-10"},{name:"万圣节",date:"10-31"},
+  {name:"双十一",date:"11-11"},
   {name:"平安夜",date:"12-24"},{name:"圣诞节",date:"12-25"},
 ];
 
 // 计算某年母亲节（5月第二个周日）和父亲节（6月第三个周日）的公历日期
+// 全程使用 UTC，避免设备时区差异导致日期偏移
 function getNthWeekday(year, month, weekday, nth) {
   // weekday: 0=周日, nth: 第几个
-  var d = new Date(year, month-1, 1);
-  var first = d.getDay(); // 1号是周几
+  var first = new Date(Date.UTC(year, month-1, 1)).getUTCDay();
   var offset = (weekday - first + 7) % 7;
-  return new Date(year, month-1, 1 + offset + (nth-1)*7);
+  return new Date(Date.UTC(year, month-1, 1 + offset + (nth-1)*7));
 }
 function getMotherDay(year) {
   var d = getNthWeekday(year, 5, 0, 2);
-  return (d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();
+  return pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
 }
 function getFatherDay(year) {
   var d = getNthWeekday(year, 6, 0, 3);
-  return (d.getMonth()+1<10?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();
+  return pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
+}
+// 感恩节：11月第4个周四
+function getThanksgiving(year) {
+  var d = getNthWeekday(year, 11, 4, 4);
+  return pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
 }
 
-// ─── 传统节日（农历浮动，已排除法定节假日中的端午/中秋/春节，避免重复）────
+// ─── 传统节日（农历，由 lunarInfo 算法动态推算，永久有效、无需维护）────────
+// 已排除法定节假日中的春节/端午/中秋，避免与节假日 API 重复
 var LUNAR_FESTIVALS = [
-  {name:"元宵节",dates:["2025-02-12","2026-03-03","2027-02-20","2028-02-09"]},
-  {name:"龙抬头",dates:["2025-03-01","2026-03-19","2027-03-09","2028-02-26"]},
-  {name:"七夕",  dates:["2025-08-29","2026-08-19","2027-08-08","2028-08-26"]},
-  {name:"中元节",dates:["2025-09-11","2026-09-01","2027-08-21","2028-09-08"]},
-  {name:"重阳节",dates:["2025-10-29","2026-10-19","2027-11-08","2028-10-26"]},
-  {name:"冬至",  dates:["2025-12-22","2026-12-22","2027-12-22","2028-12-21"]},
-  {name:"除夕",  dates:["2025-01-28","2026-02-16","2027-02-05","2028-01-25"]},
+  {name:"元宵节", lm:1,  ld:15},  // 正月十五
+  {name:"龙抬头", lm:2,  ld:2},   // 二月初二
+  {name:"上巳节", lm:3,  ld:3},   // 三月初三
+  {name:"七夕",   lm:7,  ld:7},   // 七月初七
+  {name:"中元节", lm:7,  ld:15},  // 七月十五
+  {name:"重阳节", lm:9,  ld:9},   // 九月初九
+  {name:"寒衣节", lm:10, ld:1},   // 十月初一，与清明、中元并称三大祭祖节
+  {name:"下元节", lm:10, ld:15},  // 十月十五
+  {name:"腊八节", lm:12, ld:8},   // 腊月初八
+  {name:"小年",   lm:12, ld:23},  // 腊月廿三（北方）；南方为廿四，改成 24 即可
 ];
+// 除夕、冬至不是"农历某月某日"，单独推算（见 getChineseNewYearEve / getWinterSolstice）
 
 var FESTIVAL_EMOJI = {
   春节:"🧧",除夕:"🧨",元宵节:"🏮",元旦:"🎊",中秋节:"🌕",端午节:"🐉",
   七夕:"💝",情人节:"💕","520":"💌",儿童节:"🎈",圣诞节:"🎄",冬至:"❄️",重阳节:"🍂",
   国庆节:"🇨🇳",劳动节:"👷",母亲节:"👩",父亲节:"👨",平安夜:"🎁",万圣节:"🎃",
-  龙抬头:"🐲",中元节:"👻",
+  龙抬头:"🐲",中元节:"👻",妇女节:"💐",愚人节:"🃏",教师节:"📚",
+  建党节:"🎆",建军节:"🎖",清明节:"🌿",腊八节:"🥣",小年:"🧹",
+  寒衣节:"🕯",下元节:"🏮",上巳节:"🌸",双十一:"🛒",感恩节:"🦃",
 };
 
 // 节日习俗文案
@@ -90,9 +109,18 @@ var FESTIVAL_CUSTOM = {
   "万圣节":  "万圣节快乐！Trick or Treat 🎃",
   "平安夜":  "平安夜快乐！愿岁月静好，平安喜乐 🎁",
   "圣诞节":  "圣诞快乐！愿你收到最想要的礼物 🎄",
+  "建党节":  "七一建党节，不忘初心，牢记使命 🎆",
+  "建军节":  "八一建军节，致敬最可爱的人 🎖",
+  "腊八节":  "腊八到！喝碗腊八粥，年味儿就近了 🥣",
+  "小年":    "小年到！祭灶扫尘办年货，准备迎新春（南方习俗为腊月廿四）🧹",
+  "寒衣节":  "寒衣节，为逝去的亲人送件寒衣，寄一份思念 🕯",
+  "下元节":  "下元节，祈福消灾，愿平安顺遂 🏮",
+  "上巳节":  "三月三，上巳节，古人此日踏青祓禊、曲水流觞 🌸",
+  "双十一":  "双十一到了，购物车该清空了，理性剁手 🛒",
+  "感恩节":  "感恩节快乐！记得对身边重要的人说声谢谢 🦃",
 };
 
-// ─── 农历算法（月首表法，精确覆盖2024-2030年）──────────────────────────────────
+// ─── 农历算法（lunarInfo 权威数据表，覆盖 1900-2100 年，无需维护）────────────
 // 每行：[农历年, 农历月, 是否闰月, 该月初一对应的公历年月日]
 // 数据来源：紫金山天文台
 // ─── 农历算法（经典 lunarInfo 表，1900-2100 权威数据，精确无误差）──────────
@@ -135,10 +163,9 @@ function monthDays(y, m) {
 }
 
 // 公历转农历：返回 {year, month, day, isLeap}
+// 注意：全程使用 Date.UTC，避免 1900 年 LMT（地方平太阳时）导致的 ±1 天误差
 function solarToLunar(sy, sm, sd) {
-  var baseDate = new Date(1900, 0, 31);
-  var objDate = new Date(sy, sm-1, sd);
-  var offset = Math.round((objDate - baseDate) / 86400000);
+  var offset = Math.round((Date.UTC(sy, sm-1, sd) - Date.UTC(1900, 0, 31)) / 86400000);
   var temp = 0, y = 1900;
   for (; y < 2100 && offset > 0; y++) {
     temp = lYearDays(y);
@@ -161,7 +188,6 @@ function solarToLunar(sy, sm, sd) {
 
 // 农历转公历：给定农历年月日，返回公历日期字符串 YYYY-MM-DD
 function lunarToSolar(ly, lm, ld) {
-  var baseDate = new Date(1900, 0, 31);
   var offset = 0;
   for (var y = 1900; y < ly; y++) offset += lYearDays(y);
   var leap = leapMonth(ly);
@@ -170,8 +196,8 @@ function lunarToSolar(ly, lm, ld) {
     if (m === leap) offset += leapDays(ly);
   }
   offset += (ld - 1);
-  var result = new Date(baseDate.getTime() + offset * 86400000);
-  return result.getFullYear()+"-"+pad(result.getMonth()+1)+"-"+pad(result.getDate());
+  var result = new Date(Date.UTC(1900, 0, 31) + offset * 86400000);
+  return result.getUTCFullYear()+"-"+pad(result.getUTCMonth()+1)+"-"+pad(result.getUTCDate());
 }
 
 // ─── 工具 ────────────────────────────────────────────────────────────────────
@@ -184,6 +210,21 @@ function getToday() {
 }
 
 function daysDiff(a,b) { return Math.round((new Date(b)-new Date(a))/86400000); }
+
+// 日期偏移：'YYYY-MM-DD' 加减 n 天，返回同格式字符串（UTC 运算）
+function shiftDate(dateStr, n) {
+  var d = new Date(new Date(dateStr).getTime() + n*86400000);
+  return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
+}
+
+// 除夕 = 该农历年正月初一的前一天（腊月末日可能是廿九或三十，必须动态推算）
+function getChineseNewYearEve(year) { return shiftDate(lunarToSolar(year,1,1), -1); }
+
+// 冬至为节气而非农历固定日。经天文计算核验，2024-2040 年严格遵循 4 年循环：
+// 年份 %4 为 0 或 1 → 12月21日；为 2 或 3 → 12月22日。约 2050 年后需重新校准。
+function getWinterSolstice(year) {
+  return year + "-12-" + ((year % 4 <= 1) ? "21" : "22");
+}
 
 function parseSolarList(input) {
   if (!input||!input.trim()) return [];
@@ -220,7 +261,6 @@ function solarDiff(todayStr, year, mmdd) {
 // ─── 全局状态 ────────────────────────────────────────────────────────────────
 var T            = getToday();
 var holidayData  = null;
-var almanacText  = "";
 
 // ─── 最终推送 ────────────────────────────────────────────────────────────────
 function pushNotifications() {
@@ -247,30 +287,35 @@ function pushNotifications() {
   // 传统节日
   var festivalsToday=[], festivalsUpcoming=[];
 
+  // 统一的节日判定：dateFn(year) 返回该年公历日期，自动取最近一次
+  // 从 T.year-1 起算：腊八/小年在农历腊月，公历落在次年1月，
+  // 若从 T.year 起算会漏掉"上一个农历年"的这几个节日
+  function checkFestival(name, dateFn) {
+    for (var y=T.year-1; y<=T.year+1; y++) {
+      var diff = daysDiff(T.full, dateFn(y));
+      if (diff === 0) { festivalsToday.push(name); return; }
+      if (diff > 0) {
+        if (diff <= 7) festivalsUpcoming.push({name:name, diff:diff});
+        return;
+      }
+    }
+  }
+
   // 公历固定节日
   SOLAR_FESTIVALS.forEach(function(f){
-    var diff=solarDiff(T.full,T.year,f.date);
-    if(diff===0) festivalsToday.push(f.name);
-    else if(diff>0&&diff<=7) festivalsUpcoming.push({name:f.name,diff:diff});
+    checkFestival(f.name, function(y){ return y+"-"+f.date; });
   });
-
   // 母亲节（5月第二个周日）、父亲节（6月第三个周日）
-  var floatFestivals=[
-    {name:"母亲节", mmdd:getMotherDay(T.year)},
-    {name:"父亲节", mmdd:getFatherDay(T.year)},
-  ];
-  floatFestivals.forEach(function(f){
-    var diff=solarDiff(T.full,T.year,f.mmdd);
-    if(diff===0) festivalsToday.push(f.name);
-    else if(diff>0&&diff<=7) festivalsUpcoming.push({name:f.name,diff:diff});
-  });
+  checkFestival("母亲节", function(y){ return y+"-"+getMotherDay(y); });
+  checkFestival("父亲节", function(y){ return y+"-"+getFatherDay(y); });
+  checkFestival("感恩节", function(y){ return y+"-"+getThanksgiving(y); });
+  // 农历传统节日（动态推算）
   LUNAR_FESTIVALS.forEach(function(f){
-    f.dates.forEach(function(d){
-      var diff=daysDiff(T.full,d);
-      if(diff===0){festivalsToday.push(f.name);return;}
-      if(diff>0&&diff<=7) festivalsUpcoming.push({name:f.name,diff:diff});
-    });
+    checkFestival(f.name, function(y){ return lunarToSolar(y, f.lm, f.ld); });
   });
+  // 除夕（正月初一前一天）与冬至（节气）
+  checkFestival("除夕", getChineseNewYearEve);
+  checkFestival("冬至", getWinterSolstice);
   todayIsOff.forEach(function(h){ if(festivalsToday.indexOf(h.name)<0) festivalsToday.push(h.name); });
 
   // 公历生日（声明移到下方）
@@ -282,7 +327,7 @@ function pushNotifications() {
   console.log("[BoxJS] 公历生日="+_solar_raw);
   console.log("[BoxJS] 农历生日="+_lunar_raw);
   console.log("[BoxJS] 纪念日="+_anniv_raw);
-  console.log("[今天] 公历="+T.full+" 农历=月"+todayLunar.month+"日"+todayLunar.day);
+  console.log("[今天] 公历="+T.full+" 农历="+todayLunar.month+"月"+todayLunar.day+"日"+(todayLunar.isLeap?"(闰月)":""));
 
   // 公历生日
   var birthdaysToday=[], birthdaysSoon=[];
@@ -321,7 +366,9 @@ function pushNotifications() {
   // 收集所有未来30天内的生日和纪念日，用于主通知显示
   var upcomingPersonal=[];
   birthdaysSoon.forEach(function(b){
-    upcomingPersonal.push({emoji:"🎂", name:b.name, diff:b.diff});
+    // solar/mmdd 需一并带上，否则通知里的日期标签会永远为空
+    upcomingPersonal.push({emoji:"🎂", name:b.name, diff:b.diff,
+                           solar:b.solar||null, mmdd:b.mmdd||null});
   });
   annivSoon.forEach(function(a){
     upcomingPersonal.push({emoji:"💑", name:a.name, diff:a.diff});
@@ -368,7 +415,10 @@ function pushNotifications() {
       else                   countdownText = "还有 "+p.diff+" 天就是生日";
 
       var typeLabel = isLunar ? "农历生日" : "公历生日";
-      var dateLabel = p.solar ? p.solar.slice(5).replace("-","月")+"日" : "";
+      var srcDate   = p.solar || (p.mmdd ? T.year+"-"+p.mmdd : "");
+      var dateLabel = srcDate
+        ? parseInt(srcDate.slice(5,7),10)+"月"+parseInt(srcDate.slice(8,10),10)+"日"
+        : "";
       var subtitle  = countdownText + (dateLabel ? "（"+dateLabel+"）" : "");
 
       $notification.post("🎂 "+pureName+"的生日快到了", subtitle, typeLabel);
@@ -425,47 +475,65 @@ function pushNotifications() {
   if (festivalsToday.length)    mainSubtitle = festivalsToday.map(function(n){return (FESTIVAL_EMOJI[n]||"🎊")+n;}).join(" ");
   else if (upcoming.length > 0) mainSubtitle = "距"+upcoming[0].name+"还有"+upcoming[0].daysUntil+"天";
 
-  $notification.post("📅 日历助手", mainSubtitle, mainLines.join("\n")||"今日无特别事项");
+  var mainBody = mainLines.join("\n");
+  if (!mainBody) {
+    // 节日当天却写"无特别事项"会显得矛盾，分情况给文案
+    mainBody = festivalsToday.length ? "今天没有其他安排，好好享受节日 🎉" : "今日无特别事项";
+  }
+  $notification.post("📅 日历助手", mainSubtitle, mainBody);
 
   // 黄历已移至 08:15 almanac 模式独立推送，主推送不再包含
   $done({});
 }
 
-// ─── 请求链：节假日 → 黄历 → 推送 ──────────────────────────────────────────
-function fetchAlmanacThenPush() {
-  var url = ALMANAC_BASE+T.year+"/"+T.year+T.month+".json";
-  $httpClient.get({url:url, timeout:8000, headers:{"user-agent":MOBILE_UA}}, function(err,r,data){
-    if (!err&&data) {
-      try {
-        var json=JSON.parse(data);
-        var list=(json.data&&json.data[0]&&json.data[0].almanac)||[];
-        for (var i=0;i<list.length;i++) {
-          var item=list[i];
-          if (item.year===String(T.year)&&item.month===String(parseInt(T.month))&&item.day===String(parseInt(T.day))) {
-            var gzDay = item.gzDay || item.gz_day || item.gzRi || "";
-            var gzStr = item.gzYear+"年"+item.gzMonth+"月"+(gzDay ? gzDay+"日" : "");
-            almanacText="农历"+item.lMonth+"月"+item.lDate+" · "+gzStr+"\n✅宜："+(item.suit||"-")+"\n🈲忌："+(item.avoid||"-");
-            break;
-          }
-        }
-      } catch(e){ console.log("[黄历] 解析失败:"+e); }
-    } else {
-      console.log("[黄历] 请求失败:"+err);
+// ─── 黄历数据获取（多源回退，任一成功即返回）──────────────────────────────
+function fetchAlmanacItem(cb) {
+  var idx = 0;
+  function tryNext() {
+    if (idx >= ALMANAC_SOURCES.length) {
+      console.log("[黄历] 所有数据源均失败");
+      cb(null);
+      return;
     }
-    pushNotifications();
-  });
+    var n   = idx + 1;
+    var url = ALMANAC_SOURCES[idx] + T.year + "/" + T.year + T.month + ".json";
+    idx++;
+    $httpClient.get({url:url, timeout:10000, headers:{"user-agent":MOBILE_UA}}, function(err,r,data){
+      if (!err && data) {
+        try {
+          var json = JSON.parse(data);
+          var list = (json.data && json.data[0] && json.data[0].almanac) || [];
+          for (var i=0;i<list.length;i++) {
+            var item = list[i];
+            if (item.year===String(T.year) && item.month===String(parseInt(T.month)) && item.day===String(parseInt(T.day))) {
+              console.log("[黄历] 加载成功（源"+n+"）");
+              cb(item);
+              return;
+            }
+          }
+          console.log("[黄历] 源"+n+" 数据中未找到今日");
+        } catch(e){ console.log("[黄历] 源"+n+" 解析失败:"+e); }
+      } else {
+        console.log("[黄历] 源"+n+" 请求失败:"+err);
+      }
+      tryNext();
+    });
+  }
+  tryNext();
 }
 
-function fetchHolidayThenAlmanac(url, isCDN) {
+// ─── 请求链：节假日 → 推送 ────────────────────────────────────────────────
+// 黄历由 08:15 的 almanac 模式独立推送，主推送无需再拉，省一次请求
+function fetchHolidayThenPush(url, isFallback) {
   $httpClient.get({url:url, timeout:10000, headers:{"user-agent":MOBILE_UA}}, function(err,r,data){
     if (!err&&data) {
       try { holidayData=JSON.parse(data); console.log("[节假日] 加载成功"); }
       catch(e){ console.log("[节假日] JSON解析失败:"+e); }
     } else {
       console.log("[节假日] 请求失败:"+err);
-      if (!isCDN) { fetchHolidayThenAlmanac(HOLIDAY_API_CDN, true); return; }
+      if (!isFallback) { fetchHolidayThenPush(HOLIDAY_API_RAW, true); return; }
     }
-    fetchAlmanacThenPush();
+    pushNotifications();
   });
 }
 
@@ -532,26 +600,17 @@ function runAlmanac() {
       return;
     }
 
-    // 拉黄历数据并推送
-    var url = ALMANAC_BASE+T.year+"/"+T.year+T.month+".json";
-    $httpClient.get({url:url, timeout:8000, headers:{"user-agent":MOBILE_UA}}, function(err2,r2,data2){
-      if (!err2 && data2) {
-        try {
-          var json = JSON.parse(data2);
-          var list = (json.data&&json.data[0]&&json.data[0].almanac)||[];
-          for (var i=0;i<list.length;i++) {
-            var item = list[i];
-            if (item.year===String(T.year)&&item.month===String(parseInt(T.month))&&item.day===String(parseInt(T.day))) {
-              var gzDay  = item.gzDay || item.gz_day || item.gzRi || "";
-              var gzStr  = item.gzYear+"年"+item.gzMonth+"月"+(gzDay?gzDay+"日":"");
-              var nlDate = "农历"+item.lMonth+"月"+item.lDate+" · "+gzStr;
-              var suit   = (item.suit  || "-");
-              var avoid  = (item.avoid || "-");
-              $notification.post("📖 今日黄历", nlDate, "✅宜："+suit+"\n🈲忌："+avoid);
-              break;
-            }
-          }
-        } catch(e){ console.log("[黄历] 解析失败:"+e); }
+    // 拉黄历数据并推送（多源回退）
+    fetchAlmanacItem(function(item){
+      if (item) {
+        var gzDay  = item.gzDay || item.gz_day || item.gzRi || "";
+        var gzStr  = item.gzYear+"年"+item.gzMonth+"月"+(gzDay?gzDay+"日":"");
+        var nlDate = "农历"+item.lMonth+"月"+item.lDate+" · "+gzStr;
+        var suit   = (item.suit  || "-");
+        var avoid  = (item.avoid || "-");
+        $notification.post("📖 今日黄历", nlDate, "✅宜："+suit+"\n🈲忌："+avoid);
+      } else {
+        console.log("[黄历] 数据获取失败，跳过推送");
       }
       $done({});
     });
@@ -579,5 +638,5 @@ if (RUN_MODE === "comp") {
   runGVReminder();
 } else {
   // main 模式：主推送（节假日+生日+节日祝福+节假日预警，不含黄历和补班）
-  fetchHolidayThenAlmanac(HOLIDAY_API, false);
+  fetchHolidayThenPush(HOLIDAY_API_CDN, false);
 }
