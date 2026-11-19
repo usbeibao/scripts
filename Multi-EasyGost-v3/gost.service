@@ -1,0 +1,13 @@
+[Unit]
+Description=GOST v3 (Multi-EasyGost)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/lib/multi-easygost/gost -C /etc/gost/config-v3.json
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
